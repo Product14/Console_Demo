@@ -36,9 +36,6 @@ type Slide = {
   label: string;
 };
 
-// CSS filter applied to "input/raw" renders to convey unprocessed lot-photo look.
-// Same source image as the studio output (same vehicle), just visually rougher.
-const RAW_LOOK = "saturate(0.55) contrast(0.86) brightness(0.94) sepia(0.10)";
 
 const SLIDES: Slide[] = [
   { kind: "video", studio: spin360Mov,        input: null,            label: "360° Tour" },
@@ -306,7 +303,6 @@ export function RawPhotoTransformModal({
                   src={rawExteriorImg}
                   alt="Raw lot photo"
                   className="absolute inset-0 w-full h-full object-contain"
-                  style={{ filter: RAW_LOOK }}
                 />
                 <img
                   ref={heroStudioRef}
@@ -352,7 +348,6 @@ export function RawPhotoTransformModal({
                   src={selectedSrc.src}
                   alt=""
                   className="absolute inset-0 w-full h-full object-contain"
-                  style={mode === "input" ? { filter: RAW_LOOK } : undefined}
                 />
               )
             )}
@@ -512,7 +507,6 @@ export function RawPhotoTransformModal({
                       src={src.src}
                       alt=""
                       className="absolute inset-0 w-full h-full object-cover"
-                      style={mode === "input" ? { filter: RAW_LOOK } : undefined}
                     />
                   )}
                 </button>
