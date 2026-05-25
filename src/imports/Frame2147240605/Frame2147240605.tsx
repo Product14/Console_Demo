@@ -979,7 +979,6 @@ function Frame10() {
     <div className="content-stretch flex flex-col gap-[32px] items-center relative shrink-0">
       <Frame22 />
       <Frame9 />
-      <Frame25 />
     </div>
   );
 }

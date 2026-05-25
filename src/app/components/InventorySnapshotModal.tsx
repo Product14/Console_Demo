@@ -144,7 +144,7 @@ export function InventorySnapshotModal({
         className="bg-white rounded-[20px] w-full max-w-[760px] overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.28)]"
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-[28px] pt-[24px]">
+        <div className="flex items-start justify-between px-[28px] pt-[22px]">
           <div className="flex items-start gap-[14px]">
             <div className="shrink-0 size-[40px] rounded-full bg-[rgba(70,0,242,0.08)] flex items-center justify-center">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -156,10 +156,10 @@ export function InventorySnapshotModal({
             </div>
             <div>
               <h2 className="text-[20px] font-bold text-[#0a0a0a] font-['Inter:Bold',sans-serif] leading-[26px]">
-                Here's a snapshot of your inventory
+                Your inventory snapshot
               </h2>
-              <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif] leading-[18px]">
-                We scored every VIN in your feed. Here's where you stand and what we'll fix in one click.
+              <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif]">
+                Every VIN scored — here's where you stand.
               </p>
             </div>
           </div>
@@ -183,8 +183,8 @@ export function InventorySnapshotModal({
                 {score < 3 ? "Critical" : score < 4 ? "Needs Work" : "Healthy"}
               </span>
             </p>
-            <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif] leading-[18px]">
-              Most listings are running on placeholder or no media.
+            <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif]">
+              Most listings have placeholder or no media.
             </p>
           </div>
         </div>

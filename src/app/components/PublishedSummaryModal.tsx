@@ -158,8 +158,8 @@ export function PublishedSummaryModal({
                     Published
                   </span>
                 </div>
-                <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif] leading-[18px]">
-                  <span className="font-semibold text-[#0a0a0a]">{totalListings.toLocaleString()} listings</span> are now visible across{" "}
+                <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif]">
+                  <span className="font-semibold text-[#0a0a0a]">{totalListings.toLocaleString()} listings</span> live on{" "}
                   <span className="font-semibold text-[#0a0a0a]">{platforms.length}</span> {platforms.length === 1 ? "channel" : "channels"}.
                 </p>
               </div>
@@ -257,20 +257,20 @@ export function PublishedSummaryModal({
             </div>
             <div className="flex-1">
               <p className="text-[13px] font-semibold text-[#0a0a0a] font-['Inter:Semi_Bold',sans-serif]">
-                Your listings are reaching buyers right now
+                Reaching buyers now
               </p>
               <p className="text-[12px] text-black/55 mt-[2px] font-['Inter:Regular',sans-serif]">
-                Studio-grade media is indexed across your channels — shopper engagement begins immediately.
+                Studio-grade media live on every channel.
               </p>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-[28px] py-[16px] border-t border-black/8 flex items-center justify-between bg-white">
+        <div className="px-[28px] py-[14px] border-t border-black/8 flex items-center justify-between bg-white">
           <div className="flex items-center gap-[6px] text-[12px] text-black/55 font-['Inter:Medium',sans-serif] font-medium">
             <div className="size-[6px] rounded-full bg-[#10B981] animate-pulse" />
-            All channels live · monitoring engagement
+            All channels live
           </div>
           <button
             type="button"

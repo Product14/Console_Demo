@@ -179,3 +179,50 @@
     line-height: 1.5;
   }
 }
+
+/* Apple-Siri-style shimmer: a continuously sweeping rainbow gradient */
+@keyframes siri-shimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.siri-shimmer-bg {
+  background: linear-gradient(
+    90deg,
+    #5BB5FF 0%,
+    #7F6AF2 18%,
+    #B651D7 36%,
+    #FF5C9A 54%,
+    #FF9F66 72%,
+    #5BB5FF 100%
+  );
+  background-size: 200% 100%;
+  animation: siri-shimmer 3.4s linear infinite;
+}
+
+.siri-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    #5BB5FF 0%,
+    #7F6AF2 18%,
+    #B651D7 36%,
+    #FF5C9A 54%,
+    #FF9F66 72%,
+    #5BB5FF 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: siri-shimmer 3.4s linear infinite;
+}
+
+/* Soft pulsing glow used to highlight the row paired with the spotlit badge */
+@keyframes siri-row-glow {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgba(127,106,242,0.25), 0 0 18px rgba(127,106,242,0.10); }
+  50%      { box-shadow: inset 0 0 0 1px rgba(255,92,154,0.35), 0 0 24px rgba(255,92,154,0.18); }
+}
+
+.siri-row-glow {
+  animation: siri-row-glow 2.8s ease-in-out infinite;
+}

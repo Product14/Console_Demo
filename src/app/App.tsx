@@ -1,18 +1,29 @@
 import { useState, useCallback } from "react";
 import Frame31 from "../imports/Frame2147240606/Frame2147240606";
 import { IMSImportScreen } from "./components/IMSImportScreen";
+import { BenchmarksModal, DEFAULT_BENCHMARKS, type Benchmarks } from "./components/BenchmarksModal";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { ScanningScreen } from "./components/ScanningScreen";
 import { DashboardScreen } from "./components/DashboardScreen";
+import { MarketingScreen } from "./components/MarketingScreen";
 
-type Screen = "import" | "loading" | "synced" | "scanning" | "dashboard";
+type Screen = "import" | "loading" | "synced" | "scanning" | "dashboard" | "marketing";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("import");
   const [imsName, setImsName] = useState<string>("Vincue");
+  const [benchmarksOpen, setBenchmarksOpen] = useState(false);
+  const [benchmarks, setBenchmarks] = useState<Benchmarks>(DEFAULT_BENCHMARKS);
 
+  // After IMS pick: capture benchmarks before starting the import animation
   const handleImport = useCallback((name: string) => {
     setImsName(name);
+    setBenchmarksOpen(true);
+  }, []);
+
+  const handleBenchmarksSubmit = useCallback((b: Benchmarks) => {
+    setBenchmarks(b);
+    setBenchmarksOpen(false);
     setScreen("loading");
   }, []);
 
@@ -31,10 +42,23 @@ export default function App() {
     }
   };
 
+  const handleNav = (label: string) => {
+    if (label === "Marketing") setScreen("marketing");
+    else if (label === "Studio AI" || label === "Inventory") setScreen("dashboard");
+  };
+
+  if (screen === "marketing") {
+    return (
+      <div className="size-full overflow-auto">
+        <MarketingScreen onNavigate={handleNav} />
+      </div>
+    );
+  }
+
   if (screen === "dashboard") {
     return (
       <div className="size-full overflow-auto">
-        <DashboardScreen />
+        <DashboardScreen benchmarks={benchmarks} onNavigate={handleNav} />
       </div>
     );
   }
@@ -42,7 +66,11 @@ export default function App() {
   if (screen === "scanning") {
     return (
       <div className="size-full overflow-auto">
-        <ScanningScreen imsName={imsName} onFinish={() => setScreen("dashboard")} />
+        <ScanningScreen
+          imsName={imsName}
+          benchmarks={benchmarks}
+          onFinish={() => setScreen("dashboard")}
+        />
       </div>
     );
   }
@@ -66,6 +94,12 @@ export default function App() {
   return (
     <div className="size-full">
       <IMSImportScreen onImport={handleImport} />
+      <BenchmarksModal
+        open={benchmarksOpen}
+        imsName={imsName}
+        onClose={() => setBenchmarksOpen(false)}
+        onSubmit={handleBenchmarksSubmit}
+      />
     </div>
   );
 }

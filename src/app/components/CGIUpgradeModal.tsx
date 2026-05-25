@@ -399,15 +399,15 @@ export function CGIUpgradeModal({ open, onClose, onNext, totalCgi = 134 }: Props
               <div>
                 <div className="flex items-center gap-[8px] flex-wrap">
                   <h2 className="text-[20px] font-bold text-[#0a0a0a] font-['Inter:Bold',sans-serif] leading-[26px]">
-                    Upgrading CGI to real photography
+                    Upgrading CGI to real photos
                   </h2>
                   <span className="inline-flex items-center gap-[4px] px-[8px] py-[2px] rounded-full bg-[rgba(245,158,11,0.14)] text-[#B45309] text-[10px] font-semibold uppercase tracking-[0.6px]">
                     <Layers size={10} />
                     Smart Match
                   </span>
                 </div>
-                <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif] leading-[18px] max-w-[700px]">
-                  Swapping manufacturer renders for real studio photos pulled from spec-matched VINs on your floor.
+                <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif]">
+                  Swapping renders for studio photos from spec-matched VINs.
                 </p>
               </div>
             </div>
@@ -486,7 +486,7 @@ export function CGIUpgradeModal({ open, onClose, onNext, totalCgi = 134 }: Props
         </div>
 
         {/* Footer */}
-        <div className="px-[28px] py-[16px] border-t border-black/8 flex items-center justify-between bg-white">
+        <div className="px-[28px] py-[14px] border-t border-black/8 flex items-center justify-between bg-white">
           <div className="flex items-center gap-[6px] text-[12px] text-black/55 font-['Inter:Medium',sans-serif] font-medium">
             <div className="size-[6px] rounded-full bg-[#F59E0B] animate-pulse" />
             CGI → Real photo · powered by

@@ -8,6 +8,10 @@ interface Props {
   onClose: () => void;
   onNext?: () => void;
   totalNoPhotos?: number;
+  /** Baseline days to frontline (dealer's input) */
+  daysBaseline?: number;
+  /** $ holding cost per day per VIN (dealer's input) */
+  holdingPerDay?: number;
 }
 
 type Status = "scanning" | "matching" | "applied";
@@ -114,9 +118,8 @@ function HowItWorks() {
         </div>
         <Tile label="2025 Ford F-150 XLT" sub="STK-2210 · no photos yet" />
       </div>
-      <p className="mt-[14px] text-[12px] text-black/55 text-center font-['Inter:Regular',sans-serif] leading-[18px] max-w-[640px] mx-auto">
-        New cars of the same trim and color look identical. Smart Match reuses studio media from a spec-matched
-        unit already in your inventory — so a brand-new VIN gets a full media set the moment it lands on the lot.
+      <p className="mt-[12px] text-[12px] text-black/55 text-center font-['Inter:Regular',sans-serif]">
+        Same trim, same color — instant media for new arrivals.
       </p>
     </div>
   );
@@ -266,7 +269,14 @@ function MatchCard({ card }: { card: MatchCard }) {
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
-export function SmartMatchModal({ open, onClose, onNext, totalNoPhotos = 90 }: Props) {
+export function SmartMatchModal({
+  open, onClose, onNext, totalNoPhotos = 90,
+  daysBaseline = 8.2, holdingPerDay = 38,
+}: Props) {
+  // Smart Match cuts the dealer's frontline cycle roughly in half
+  const daysAfter = Math.round((daysBaseline / 2) * 10) / 10;
+  const daysSaved = Math.round((daysBaseline - daysAfter) * 10) / 10;
+  const reductionPct = Math.round((daysSaved / daysBaseline) * 100);
   const overlayRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -410,17 +420,15 @@ export function SmartMatchModal({ open, onClose, onNext, totalNoPhotos = 90 }: P
               <div>
                 <div className="flex items-center gap-[8px] flex-wrap">
                   <h2 className="text-[20px] font-bold text-[#0a0a0a] font-['Inter:Bold',sans-serif] leading-[26px]">
-                    Smart Match — adding photos to No-Photo inventory
+                    Smart Match — filling no-photo inventory
                   </h2>
                   <span className="inline-flex items-center gap-[4px] px-[8px] py-[2px] rounded-full bg-[rgba(0,196,136,0.12)] text-[#00C488] text-[10px] font-semibold uppercase tracking-[0.6px]">
                     <Zap size={10} />
                     New vehicles only
                   </span>
                 </div>
-                <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif] leading-[18px] max-w-[760px]">
-                  These vehicles had no photos at all. Smart Match recognizes spec-matched units already in your
-                  inventory — same make, model, trim and color — and reuses that studio media, instantly closing
-                  the gap without a re-shoot.
+                <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif]">
+                  Reusing studio media from spec-matched VINs already on your lot.
                 </p>
               </div>
             </div>
@@ -443,9 +451,6 @@ export function SmartMatchModal({ open, onClose, onNext, totalNoPhotos = 90 }: P
               <p className="mt-[4px] text-[20px] font-bold text-[#00C488] font-['Inter:Bold',sans-serif] leading-none">
                 {displayedMatched}<span className="text-black/30 text-[13px] font-medium"> / {eligible}</span>
               </p>
-              <p className="text-[10px] text-black/45 mt-[3px]">
-                eligible new vehicles
-              </p>
             </div>
             <div className="rounded-[10px] border border-black/8 bg-white px-[14px] py-[10px]">
               <div className="flex items-center gap-[6px]">
@@ -455,20 +460,16 @@ export function SmartMatchModal({ open, onClose, onNext, totalNoPhotos = 90 }: P
                 </p>
               </div>
               <p className="mt-[4px] text-[20px] font-bold text-[#0a0a0a] font-['Inter:Bold',sans-serif] leading-none">
-                <span className="text-black/40 text-[14px] font-medium line-through mr-[6px]">8.2</span>
-                4.1<span className="text-[12px] font-semibold text-[#10B981] ml-[4px]">−50%</span>
+                <span className="text-black/40 text-[14px] font-medium line-through mr-[6px]">{daysBaseline.toFixed(1)}</span>
+                {daysAfter.toFixed(1)}<span className="text-[12px] font-semibold text-[#10B981] ml-[4px]">−{reductionPct}%</span>
               </p>
-              <p className="text-[10px] text-black/45 mt-[3px]">avg. across matched VINs</p>
             </div>
             <div className="rounded-[10px] border border-black/8 bg-white px-[14px] py-[10px]">
               <p className="text-[10px] uppercase tracking-[0.8px] text-black/45 font-semibold font-['Inter:Semi_Bold',sans-serif]">
                 Holding cost saved
               </p>
               <p className="mt-[4px] text-[20px] font-bold text-[#0a0a0a] font-['Inter:Bold',sans-serif] leading-none">
-                $<span>{(displayedMatched * 38).toLocaleString()}</span>
-              </p>
-              <p className="text-[10px] text-black/45 mt-[3px]">
-                at $38/day · saved 4.1 days each
+                $<span>{(displayedMatched * daysSaved * holdingPerDay).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
               </p>
             </div>
           </div>
@@ -506,18 +507,17 @@ export function SmartMatchModal({ open, onClose, onNext, totalNoPhotos = 90 }: P
             </div>
           </div>
 
-          <p className="mt-[14px] text-[11px] text-black/45 text-center font-['Inter:Regular',sans-serif] leading-[16px]">
-            Smart Match applies to <span className="font-semibold text-black/65">new vehicles only</span>.
-            Used vehicles still need a Spyne Studio capture — they're queued for your next walk-around.
+          <p className="mt-[12px] text-[11px] text-black/45 text-center font-['Inter:Regular',sans-serif]">
+            Used VINs are queued for the next Studio capture.
           </p>
         </div>
 
         {/* Footer */}
-        <div className="px-[28px] py-[16px] border-t border-black/8 flex items-center justify-between bg-white">
+        <div className="px-[28px] py-[14px] border-t border-black/8 flex items-center justify-between bg-white">
           <div className="flex items-center gap-[6px] text-[12px] text-black/55 font-['Inter:Medium',sans-serif] font-medium">
             <div className="size-[6px] rounded-full bg-[#00C488] animate-pulse" />
             Smart Match active · Time-to-life on inventory:
-            <span className="text-[#0a0a0a] font-semibold ml-[2px]">−50%</span>
+            <span className="text-[#0a0a0a] font-semibold ml-[2px]">−{reductionPct}%</span>
           </div>
           <div className="flex items-center gap-[10px]">
             <button

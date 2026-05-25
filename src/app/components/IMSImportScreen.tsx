@@ -248,7 +248,7 @@ export function IMSImportScreen({ onImport }: Props) {
                 Import your inventory
               </h1>
               <p className="mt-[6px] text-[14px] text-black/50 font-['Inter:Medium',sans-serif] font-medium">
-                Pick the system you use today — we'll sync vehicles, photos, and pricing.
+                Pick your IMS — we'll sync vehicles, photos and pricing.
               </p>
             </div>
 
@@ -400,15 +400,15 @@ export function IMSImportScreen({ onImport }: Props) {
                 <FeatureBanner
                   icon={<Sparkles size={20} />}
                   eyebrow="Smart Campaigns"
-                  title="Highlights, billboards & overlays — applied at scale"
-                  body="Bulk-select vehicles from your inventory and we'll auto-apply vehicle highlights, dealership billboards, and promotional overlays to their media in one click."
+                  title="Highlights, billboards & overlays at scale"
+                  body="Bulk-apply branded creatives to vehicle media in one click."
                   accent="#4600f2"
                 />
                 <FeatureBanner
                   icon={<Layers size={20} />}
                   eyebrow="Smart Match"
                   title="Reuse media for same-spec new vehicles"
-                  body="New cars of the same trim and color look identical. Smart Match recognizes spec-matched units and reuses existing CGI and studio media — so you don't reshoot what you already have."
+                  body="Same trim, same color — spec-matched VINs share studio media. No reshoots."
                   accent="#00C488"
                 />
               </div>

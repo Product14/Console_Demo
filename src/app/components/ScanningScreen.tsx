@@ -202,9 +202,14 @@ function ColHeader({ label, sortable = true }: { label: string; sortable?: boole
 interface ScanningScreenProps {
   imsName?: string;
   onFinish?: () => void;
+  benchmarks?: { daysToFrontline: number; holdingCostPerDay: number };
 }
 
-export function ScanningScreen({ imsName = "Vincue", onFinish }: ScanningScreenProps = {}) {
+export function ScanningScreen({
+  imsName = "Vincue",
+  onFinish,
+  benchmarks = { daysToFrontline: 50, holdingCostPerDay: 40 },
+}: ScanningScreenProps = {}) {
   const statusMessages = buildStatusMessages(imsName);
   const [statusIdx, setStatusIdx] = useState(0);
   const [noPhotos, setNoPhotos] = useState(12);
@@ -401,6 +406,8 @@ export function ScanningScreen({ imsName = "Vincue", onFinish }: ScanningScreenP
       <SmartMatchModal
         open={stage === "smartMatch"}
         totalNoPhotos={90}
+        daysBaseline={benchmarks.daysToFrontline}
+        holdingPerDay={benchmarks.holdingCostPerDay}
         onClose={() => setStage("done")}
         onNext={() => setStage("cgiUpgrade")}
       />

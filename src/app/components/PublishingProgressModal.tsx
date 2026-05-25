@@ -190,9 +190,8 @@ export function PublishingProgressModal({
                   In progress
                 </span>
               </div>
-              <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif] leading-[18px]">
-                Pushing studio-ready listings to {platforms.length}{" "}
-                {platforms.length === 1 ? "channel" : "channels"}.
+              <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif]">
+                Pushing to {platforms.length} {platforms.length === 1 ? "channel" : "channels"}.
               </p>
             </div>
           </div>
@@ -275,10 +274,10 @@ export function PublishingProgressModal({
         <div className="px-[28px] py-[14px] border-t border-black/8 flex items-center justify-between bg-white">
           <div className="flex items-center gap-[6px] text-[12px] text-black/55 font-['Inter:Medium',sans-serif] font-medium">
             <div className="size-[6px] rounded-full bg-[#4600F2] animate-pulse" />
-            Streaming listings to selected channels…
+            Streaming to channels…
           </div>
           <p className="text-[11px] text-black/45 font-['Inter:Medium',sans-serif] font-medium">
-            Please keep this tab open
+            Keep this tab open
           </p>
         </div>
       </div>

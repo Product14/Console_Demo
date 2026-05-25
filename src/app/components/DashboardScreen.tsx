@@ -17,6 +17,7 @@ import { PublishedSummaryModal } from "./PublishedSummaryModal";
 import { PublishingCell } from "./PublishingCell";
 import { SelectionActionBar } from "./SelectionActionBar";
 import { SmartCampaignModal } from "./SmartCampaignModal";
+import { SmartMatchSpotlight } from "./SmartMatchSpotlight";
 import type { PublishedTo } from "./publishPlatforms";
 
 // ─── Atomic pieces ────────────────────────────────────────────────────────────
@@ -357,12 +358,13 @@ const rows: Row[] = [
 ];
 
 function VehicleRow({
-  row, published, selected, onToggle,
+  row, published, selected, onToggle, spotlit,
 }: {
   row: Row;
   published: PublishedTo[];
   selected: boolean;
   onToggle: () => void;
+  spotlit?: boolean;
 }) {
   const ageClass = row.isLoss
     ? "text-[#EF4444]"
@@ -370,9 +372,11 @@ function VehicleRow({
   return (
     <tr
       className={`border-b border-black/5 transition-colors ${
-        selected
-          ? "bg-[rgba(70,0,242,0.04)]"
-          : row.isLoss ? "bg-[#FEF2F2]/40 hover:bg-[#FEF2F2]" : "hover:bg-[#FAFAFB]"
+        spotlit
+          ? "siri-row-glow bg-[rgba(127,106,242,0.06)]"
+          : selected
+            ? "bg-[rgba(70,0,242,0.04)]"
+            : row.isLoss ? "bg-[#FEF2F2]/40 hover:bg-[#FEF2F2]" : "hover:bg-[#FAFAFB]"
       }`}
     >
       <td className="pl-4 pr-2 py-3 w-10">
@@ -429,8 +433,8 @@ function VehicleRow({
             ))}
           </div>
           {row.smartMatch && (
-            <span className="inline-flex items-center gap-[3px] text-[9px] font-semibold text-[#00C488] font-['Inter:Semi_Bold',sans-serif] uppercase tracking-[0.4px]">
-              <Layers size={9} strokeWidth={2.5} />
+            <span className="smart-match-badge siri-shimmer-bg inline-flex items-center gap-[3px] px-[7px] py-[2px] rounded-full text-[9px] font-bold text-white font-['Inter:Bold',sans-serif] uppercase tracking-[0.5px] shadow-[0_2px_8px_rgba(127,106,242,0.35)]">
+              <Layers size={9} strokeWidth={2.8} />
               Smart Match
             </span>
           )}
@@ -500,7 +504,19 @@ function ColHeader({ label }: { label: string }) {
 
 const SUMMARY_TOTAL_FIXED = 67 + 70 + 96; // raw + smartMatch + cgi
 
-export function DashboardScreen() {
+interface DashboardScreenProps {
+  benchmarks?: { daysToFrontline: number; holdingCostPerDay: number };
+  onNavigate?: (label: string) => void;
+}
+
+export function DashboardScreen({
+  benchmarks = { daysToFrontline: 50, holdingCostPerDay: 40 },
+  onNavigate,
+}: DashboardScreenProps = {}) {
+  // Derived demo numbers, calibrated from the dealer's inputs
+  const daysAfterSmartMatch = Math.round((benchmarks.daysToFrontline / 2) * 10) / 10;
+  const daysAfterPublish = Math.round((benchmarks.daysToFrontline * 0.15) * 10) / 10;
+  const daysSavedTransform = Math.round((benchmarks.daysToFrontline - daysAfterSmartMatch) * 10) / 10;
   const containerRef = useRef<HTMLDivElement>(null);
   const [summaryOpen, setSummaryOpen] = useState(true);
   type PubPhase = "none" | "select" | "progress" | "recap";
@@ -551,6 +567,16 @@ export function DashboardScreen() {
   // Smart Campaign modal — opens from the action bar CTA
   const [campaignOpen, setCampaignOpen] = useState(false);
 
+  // One-time Smart Match spotlight — surfaces after the summary modal closes
+  const [smartMatchSpotlight, setSmartMatchSpotlight] = useState(false);
+  const [smartMatchSeen, setSmartMatchSeen] = useState(false);
+
+  useEffect(() => {
+    if (summaryOpen || smartMatchSeen) return;
+    const t = setTimeout(() => setSmartMatchSpotlight(true), 600);
+    return () => clearTimeout(t);
+  }, [summaryOpen, smartMatchSeen]);
+
   // Stage 1: user picks platforms in the publish modal
   const handlePublishSubmit = (ids: string[]) => {
     setSelectedPlatforms(ids);
@@ -579,7 +605,7 @@ export function DashboardScreen() {
     <div className="bg-white flex flex-col size-full">
       <AppHeader />
       <div className="flex flex-1 min-h-0">
-        <AppSidebar active="Studio AI" />
+        <AppSidebar active="Studio AI" onNavigate={onNavigate} />
         <div ref={containerRef} className="flex-1 bg-[#f9fafb] overflow-auto">
           <div className="px-[28px] py-[20px] min-w-[1100px]">
             {/* Page header */}
@@ -589,7 +615,7 @@ export function DashboardScreen() {
                   Merchandising
                 </h1>
                 <p className="text-[13px] text-[#6B7280] mt-[2px] font-['Inter:Regular',sans-serif]">
-                  Manage your inventory and see what needs your attention
+                  See what needs your attention
                 </p>
               </div>
               <div className="flex items-center gap-[10px]">
@@ -735,15 +761,19 @@ export function DashboardScreen() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleRows.map((r) => (
-                    <VehicleRow
-                      key={r.id}
-                      row={r}
-                      published={published}
-                      selected={selectedIds.has(r.id)}
-                      onToggle={() => toggleRow(r.id)}
-                    />
-                  ))}
+                  {(() => {
+                    const firstSmartMatchId = visibleRows.find((r) => r.smartMatch)?.id;
+                    return visibleRows.map((r) => (
+                      <VehicleRow
+                        key={r.id}
+                        row={r}
+                        published={published}
+                        selected={selectedIds.has(r.id)}
+                        onToggle={() => toggleRow(r.id)}
+                        spotlit={smartMatchSpotlight && r.id === firstSmartMatchId}
+                      />
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
@@ -782,11 +812,26 @@ export function DashboardScreen() {
         onClose={() => setCampaignOpen(false)}
       />
 
+      <SmartMatchSpotlight
+        open={smartMatchSpotlight}
+        published={published.length > 0}
+        onDismiss={() => { setSmartMatchSpotlight(false); setSmartMatchSeen(true); }}
+      />
+
       {/* Transformation summary — auto-opens on dashboard load; X minimizes to widget */}
       <TransformationSummaryModal
         open={summaryOpen}
         onClose={() => setSummaryOpen(false)}
         onPublish={() => { setSummaryOpen(false); setPubPhase("select"); }}
+        summary={{
+          rawTransformed: 67,
+          smartMatched: 70,
+          cgiUpgraded: 96,
+          scoreBefore: 2.8,
+          scoreAfter: 7.9,
+          daysSaved: daysSavedTransform,
+          holdingPerDay: benchmarks.holdingCostPerDay,
+        }}
       />
       <TransformationSummaryWidget
         open={!summaryOpen && pubPhase === "none"}
@@ -805,8 +850,8 @@ export function DashboardScreen() {
         open={pubPhase === "progress"}
         platformIds={selectedPlatforms}
         totalListings={SUMMARY_TOTAL_FIXED}
-        daysBefore={4.1}
-        daysAfter={1.2}
+        daysBefore={daysAfterSmartMatch}
+        daysAfter={daysAfterPublish}
         durationMs={4800}
         onComplete={handleProgressComplete}
       />
@@ -814,8 +859,8 @@ export function DashboardScreen() {
         open={pubPhase === "recap"}
         platformIds={selectedPlatforms}
         totalListings={SUMMARY_TOTAL_FIXED}
-        daysAfter={1.2}
-        daysBaseline={8.2}
+        daysAfter={daysAfterPublish}
+        daysBaseline={benchmarks.daysToFrontline}
         onClose={() => setPubPhase("none")}
       />
     </div>

@@ -146,17 +146,15 @@ export function PublishModal({ open, onClose, onPublish, totalListings }: Props)
         className="bg-white rounded-[20px] w-full max-w-[820px] max-h-[92vh] overflow-hidden flex flex-col shadow-[0_30px_80px_rgba(0,0,0,0.35)]"
       >
         {/* Header */}
-        <div className="px-[28px] pt-[24px] pb-[14px] flex items-start justify-between">
+        <div className="px-[28px] pt-[22px] pb-[16px] flex items-start justify-between">
           <div>
             <h2 className="text-[22px] font-bold text-[#0a0a0a] font-['Inter:Bold',sans-serif] leading-[28px]">
               Publish your inventory
             </h2>
             <p className="mt-[2px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif]">
-              Select all that apply.
+              Select channels
               {typeof totalListings === "number" && (
-                <span className="ml-[6px] text-black/50">
-                  · {totalListings} listings ready
-                </span>
+                <span className="ml-[6px] text-black/50">· {totalListings} listings ready</span>
               )}
             </p>
           </div>
@@ -185,7 +183,7 @@ export function PublishModal({ open, onClose, onPublish, totalListings }: Props)
         </div>
 
         {/* Footer */}
-        <div className="px-[28px] py-[16px] border-t border-black/8 flex items-center justify-between bg-white">
+        <div className="px-[28px] py-[14px] border-t border-black/8 flex items-center justify-between bg-white">
           <p className="text-[12px] text-black/55 font-['Inter:Medium',sans-serif] font-medium">
             {count === 0
               ? "Select at least one channel"

@@ -222,8 +222,8 @@ export function TransformationSummaryModal({
                     Transformation complete
                   </span>
                 </div>
-                <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif] leading-[18px]">
-                  Here's what changed across <span className="font-semibold text-[#0a0a0a]">{totalFixed} VINs</span> in the last few minutes.
+                <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif]">
+                  <span className="font-semibold text-[#0a0a0a]">{totalFixed} VINs</span> fixed in the last few minutes.
                 </p>
               </div>
             </div>
@@ -323,20 +323,20 @@ export function TransformationSummaryModal({
             </div>
             <div className="flex-1">
               <p className="text-[14px] font-semibold text-[#0a0a0a] font-['Inter:Semi_Bold',sans-serif]">
-                Ready to publish to your channels
+                Ready to publish
               </p>
               <p className="text-[12px] text-black/55 mt-[2px] font-['Inter:Regular',sans-serif]">
-                Push studio-ready listings to your website, Marketplace, AutoTrader, Cars.com and more in one click.
+                Push to all your channels in one click.
               </p>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-[28px] py-[16px] border-t border-black/8 flex items-center justify-between bg-white">
+        <div className="px-[28px] py-[14px] border-t border-black/8 flex items-center justify-between bg-white">
           <div className="flex items-center gap-[6px] text-[12px] text-black/55 font-['Inter:Medium',sans-serif] font-medium">
             <div className="size-[6px] rounded-full bg-[#10B981] animate-pulse" />
-            All transformations applied · saved as a draft batch
+            Saved as draft batch
           </div>
           <div className="flex items-center gap-[10px]">
             <button

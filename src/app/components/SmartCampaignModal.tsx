@@ -28,7 +28,7 @@ function buildTemplates(selectedCount: number): Template[] {
       id: "ageing",
       category: "Ageing",
       title: "Move 45+ day aged inventory",
-      subtitle: "Push them before the 60-day cliff.",
+      subtitle: "Push before the 60-day cliff.",
       vehicleCount: selectedCount || 4,
       chipBg: "#FEE2E2",
       chipFg: "#B91C1C",
@@ -36,8 +36,8 @@ function buildTemplates(selectedCount: number): Template[] {
     {
       id: "promotional",
       category: "Promotional",
-      title: "Dealership branding billboard",
-      subtitle: "Showcase your make-of-the-month with branded creatives.",
+      title: "Dealership billboard",
+      subtitle: "Make-of-the-month creatives.",
       vehicleCount: 32,
       chipBg: "#DBEAFE",
       chipFg: "#1D4ED8",
@@ -45,8 +45,8 @@ function buildTemplates(selectedCount: number): Template[] {
     {
       id: "festive",
       category: "Festive",
-      title: "Christmas Holiday",
-      subtitle: "Capture the December rush with seasonal overlays.",
+      title: "Holiday season",
+      subtitle: "Capture the December rush.",
       vehicleCount: 28,
       chipBg: "#FFEDD5",
       chipFg: "#C2410C",
@@ -54,8 +54,8 @@ function buildTemplates(selectedCount: number): Template[] {
     {
       id: "certified",
       category: "Certified",
-      title: "Certified Pre-owned Trust Drive",
-      subtitle: "Trust-driven campaigns highlighting CPO benefits.",
+      title: "Certified Pre-owned Trust",
+      subtitle: "Trust-driven CPO campaigns.",
       vehicleCount: 41,
       chipBg: "#D1FAE5",
       chipFg: "#047857",
@@ -132,13 +132,13 @@ export function SmartCampaignModal({ open, onClose, onPick, onCreateCustom, sele
         className="bg-white rounded-[20px] w-full max-w-[780px] max-h-[92vh] overflow-hidden flex flex-col shadow-[0_30px_80px_rgba(0,0,0,0.35)]"
       >
         {/* Header */}
-        <div className="px-[28px] pt-[22px] pb-[14px] flex items-start justify-between gap-[16px]">
+        <div className="px-[28px] pt-[22px] pb-[16px] flex items-start justify-between gap-[16px]">
           <div>
             <h2 className="text-[20px] font-bold text-[#0a0a0a] font-['Inter:Bold',sans-serif] leading-[26px]">
               Select a campaign to run
             </h2>
-            <p className="mt-[2px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif] leading-[18px]">
-              Pick a pre-built template tuned to your selected vehicles, or start one from scratch.
+            <p className="mt-[2px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif]">
+              Pre-built templates or start from scratch.
             </p>
           </div>
           <button
@@ -168,10 +168,10 @@ export function SmartCampaignModal({ open, onClose, onPick, onCreateCustom, sele
               </div>
               <div>
                 <p className="text-[14px] font-bold text-[#0a0a0a] font-['Inter:Bold',sans-serif]">
-                  Create your own campaign
+                  Create your own
                 </p>
                 <p className="text-[12px] text-black/55 font-['Inter:Regular',sans-serif] mt-[1px]">
-                  Tailor messaging, branding and channel mix from scratch.
+                  Custom messaging, branding and channels.
                 </p>
               </div>
             </div>

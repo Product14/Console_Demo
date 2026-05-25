@@ -72,10 +72,10 @@ function SmartCampaignPopover({
 
         {/* Headline */}
         <p className="mt-[10px] text-[18px] font-bold font-['Inter:Bold',sans-serif] leading-[24px] text-[#0a0a0a]">
-          Move aged inventory with one-click campaigns
+          Move aged inventory with one click
         </p>
-        <p className="mt-[8px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif] leading-[18px]">
-          Branded, channel-ready creatives built from media you already have — get these VINs back in front of buyers without lifting a finger.
+        <p className="mt-[6px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif] leading-[18px]">
+          Channel-ready creatives built from media you already have.
         </p>
 
         {/* Stat tiles */}

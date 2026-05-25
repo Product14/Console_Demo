@@ -345,16 +345,15 @@ export function RawPhotoTransformModal({ open, onClose, onNext, totalRaw = 67 }:
               <div>
                 <div className="flex items-center gap-[8px]">
                   <h2 className="text-[20px] font-bold text-[#0a0a0a] font-['Inter:Bold',sans-serif] leading-[26px]">
-                    Transforming Raw Photos
+                    Transforming raw photos
                   </h2>
                   <span className="inline-flex items-center gap-[4px] px-[8px] py-[2px] rounded-full bg-[rgba(70,0,242,0.08)] text-[#4600F2] text-[10px] font-semibold uppercase tracking-[0.6px]">
                     <Sparkles size={10} />
                     Smart Studio
                   </span>
                 </div>
-                <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif] leading-[18px] max-w-[640px]">
-                  We're swapping out lot photography for a clean studio background, your dealership floor,
-                  and brand-tuned lighting — all without re-shooting a single vehicle.
+                <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif]">
+                  Swapping lot backgrounds for clean studio media.
                 </p>
               </div>
             </div>
@@ -403,10 +402,10 @@ export function RawPhotoTransformModal({ open, onClose, onNext, totalRaw = 67 }:
         </div>
 
         {/* Footer */}
-        <div className="px-[28px] py-[16px] border-t border-black/8 flex items-center justify-between bg-white">
+        <div className="px-[28px] py-[14px] border-t border-black/8 flex items-center justify-between bg-white">
           <div className="flex items-center gap-[6px] text-[12px] text-black/55 font-['Inter:Medium',sans-serif] font-medium">
             <div className="size-[6px] rounded-full bg-[#10B981] animate-pulse" />
-            Studio background applied · Dealer floor: <span className="text-[#0a0a0a] font-semibold">Ford Sec 48</span>
+            Ford Sec 48 · brand-tuned background
           </div>
           <div className="flex items-center gap-[10px]">
             <button

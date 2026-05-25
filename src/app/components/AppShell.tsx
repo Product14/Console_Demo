@@ -1,3 +1,4 @@
+import { Megaphone } from "lucide-react";
 import svgPaths from "../../imports/Frame2147240604/svg-1zmxnhi3uj";
 import imgAvatar from "../../imports/Frame2147240604/3d2f716baa585f0a0eaedcf9fe1235868ac32c54.png";
 
@@ -72,13 +73,21 @@ export function AppHeader() {
   );
 }
 
-function SidebarIcon({ path, active }: { path: string; active?: boolean }) {
+function SidebarIcon({
+  path, node, active,
+}: { path?: string; node?: React.ReactNode; active?: boolean }) {
   return (
     <div className={`flex h-[34px] items-center min-w-[38px] overflow-clip px-[10px] rounded-[8px] ${active ? "bg-[rgba(70,0,242,0.1)]" : ""}`}>
-      <div className="relative shrink-0 size-[24px]">
-        <svg className="absolute block inset-0 size-full" fill="none" viewBox="0 0 24 24">
-          <path d={path} fill={active ? "#4600f2" : "#1C1B1F"} />
-        </svg>
+      <div className="relative shrink-0 size-[24px] flex items-center justify-center">
+        {node ? (
+          <span className="block" style={{ color: active ? "#4600f2" : "#1C1B1F" }}>
+            {node}
+          </span>
+        ) : (
+          <svg className="absolute block inset-0 size-full" fill="none" viewBox="0 0 24 24">
+            <path d={path} fill={active ? "#4600f2" : "#1C1B1F"} />
+          </svg>
+        )}
       </div>
     </div>
   );
@@ -94,42 +103,58 @@ function SidebarDivider() {
   );
 }
 
-export function AppSidebar({ active = "Studio AI" }: { active?: string } = {}) {
-  const items = [
-    { icon: svgPaths.p3c42e100, label: "Home" },
-    { divider: true as const },
-    { icon: svgPaths.p14b6a800, label: "Studio AI" },
-    { icon: svgPaths.p37f9f500, label: "Inventory" },
-    { icon: svgPaths.p1044bb72, label: "Vini AI" },
-    { divider: true as const },
-    { icon: svgPaths.p2f8f7380, label: "Analytics" },
-    { icon: svgPaths.p23a1300, label: "Settings" },
-    { icon: svgPaths.p3ddad700, label: "More" },
+type SidebarItem =
+  | { divider: true }
+  | { label: string; path?: string; node?: React.ReactNode };
+
+export function AppSidebar({
+  active = "Studio AI",
+  onNavigate,
+}: {
+  active?: string;
+  onNavigate?: (label: string) => void;
+} = {}) {
+  const items: SidebarItem[] = [
+    { label: "Home", path: svgPaths.p3c42e100 },
+    { divider: true },
+    { label: "Studio AI", path: svgPaths.p14b6a800 },
+    { label: "Inventory", path: svgPaths.p37f9f500 },
+    { label: "Vini AI", path: svgPaths.p1044bb72 },
+    { label: "Marketing", node: <Megaphone size={20} strokeWidth={2} /> },
+    { divider: true },
+    { label: "Analytics", path: svgPaths.p2f8f7380 },
+    { label: "Settings", path: svgPaths.p23a1300 },
+    { label: "More", path: svgPaths.p3ddad700 },
   ];
   return (
     <div className="h-full shrink-0 w-[64px] z-[5] relative">
       <div className="flex items-center justify-center overflow-clip size-full">
         <div className="bg-white flex-1 h-full min-w-px relative">
           <div className="flex flex-col items-center justify-between pb-[6px] size-full">
-            <div className="flex flex-col gap-[24px] items-center py-[16px] w-full">
+            <div className="flex flex-col gap-[20px] items-center py-[16px] w-full">
               <div className="size-[30px]">
                 <svg className="size-full" fill="none" viewBox="0 0 30 30">
                   <path d={svgPaths.p2a16dd00} fill="#8F8F8F" />
                 </svg>
               </div>
-              <div className="flex flex-col gap-[16px] items-center w-full">
+              <div className="flex flex-col gap-[14px] items-center w-full">
                 {items.map((item, i) =>
                   "divider" in item ? (
                     <SidebarDivider key={i} />
                   ) : (
-                    <div key={i} className="flex flex-col items-center w-full">
+                    <button
+                      type="button"
+                      key={i}
+                      onClick={() => onNavigate?.(item.label)}
+                      className="flex flex-col items-center w-full cursor-pointer"
+                    >
                       <div className={`w-full flex flex-col items-center ${active === item.label ? "bg-[rgba(70,0,242,0.1)] rounded-[5px]" : ""}`}>
-                        <SidebarIcon path={item.icon!} active={active === item.label} />
+                        <SidebarIcon path={item.path} node={item.node} active={active === item.label} />
                       </div>
                       <p className={`text-[11px] text-center leading-[15px] font-['Inter:Medium',sans-serif] ${active === item.label ? "font-semibold text-[#4600f2]" : "font-medium text-[#0a0a0a]"}`}>
                         {item.label}
                       </p>
-                    </div>
+                    </button>
                   )
                 )}
               </div>
