@@ -5,8 +5,12 @@ import {
   X, Check, Layers, ArrowRight, TrendingUp, Wand2, Eye, Award, Sparkles,
 } from "lucide-react";
 
-import studioExt1 from "../assets/vehicle/studio-exterior-1.jpg";
-import studioExt2 from "../assets/vehicle/studio-exterior-2.jpg";
+import cgiFront            from "../assets/vehicle/cgi-front.jpg";
+import cgiSide             from "../assets/vehicle/cgi-side.jpg";
+import cgiRear             from "../assets/vehicle/cgi-rear.jpg";
+import cgiTransformedFront from "../assets/vehicle/cgi-transformed-front.jpg";
+import cgiTransformedSide  from "../assets/vehicle/cgi-transformed-side.jpg";
+import cgiTransformedRear  from "../assets/vehicle/cgi-transformed-rear.jpg";
 
 interface Props {
   open: boolean;
@@ -16,17 +20,6 @@ interface Props {
   completed?: boolean;
   totalCgi?: number;
 }
-
-// CGI / stock look — flat pastel, slightly desaturated
-const CGI_BG = `
-  repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 6px, transparent 6px 12px),
-  radial-gradient(ellipse at 50% 100%, rgba(127,106,242,0.22) 0%, transparent 70%),
-  linear-gradient(180deg, #E9E5FF 0%, #D7CDFB 60%, #B8A8F3 100%)
-`;
-const STUDIO_BG = `
-  radial-gradient(ellipse at 50% 100%, rgba(245,158,11,0.18) 0%, transparent 70%),
-  linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 55%, #DDE3EC 100%)
-`;
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
@@ -329,7 +322,7 @@ export function CGIUpgradeModal({
                 Parent vehicle · real photos
               </p>
               <div className="relative rounded-[12px] overflow-hidden border-[2px] border-[#00C488] shadow-[0_8px_24px_rgba(0,196,136,0.18)] aspect-[16/11]">
-                <img src={studioExt1} alt="Parent" className="absolute inset-0 w-full h-full object-cover" />
+                <img src={cgiTransformedSide} alt="Parent" className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute top-[8px] left-[8px]">
                   <span className="inline-flex items-center gap-[4px] px-[7px] py-[2px] rounded-full bg-[#00C488] text-white text-[9px] font-bold uppercase tracking-[0.5px]">
                     <Check size={9} strokeWidth={3} />
@@ -338,9 +331,9 @@ export function CGIUpgradeModal({
                 </div>
                 <div className="absolute bottom-[6px] left-[6px] right-[6px] bg-black/55 backdrop-blur-sm rounded-[6px] px-[8px] py-[4px]">
                   <p className="text-[9px] font-bold text-white font-['Inter:Bold',sans-serif] leading-tight">
-                    2020 Skoda Kamiq SE
+                    2020 Honda Accord Sport
                   </p>
-                  <p className="text-[8px] text-white/70 leading-tight mt-[1px]">STK-2107 · full media set</p>
+                  <p className="text-[8px] text-white/70 leading-tight mt-[1px]">STK-2107 · real photo set</p>
                 </div>
               </div>
               <p className="mt-[8px] text-[10px] text-black/55 font-['Inter:Regular',sans-serif] leading-tight">
@@ -353,23 +346,22 @@ export function CGIUpgradeModal({
               <p className="self-start text-[9px] uppercase tracking-[0.8px] font-bold text-black/55 font-['Inter:Bold',sans-serif]">
                 CGI listing → real photo
               </p>
-              <div ref={heroRef} className="relative rounded-[14px] overflow-hidden border border-black/8 aspect-[16/10] w-full">
-                {/* CGI layer (initial state) */}
-                <div ref={cgiLayerRef} className="absolute inset-0" style={{ background: CGI_BG }} />
+              <div ref={heroRef} className="relative rounded-[14px] overflow-hidden border border-black/8 aspect-[16/10] w-full bg-white">
+                {/* CGI layer — manufacturer render on white background */}
+                <div ref={cgiLayerRef} className="absolute inset-0 bg-white" />
                 <img
                   ref={cgiCarRef}
-                  src={studioExt2}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover"
-                  style={{ filter: "saturate(0.7) brightness(1.05) contrast(0.82) hue-rotate(-8deg)" }}
+                  src={cgiFront}
+                  alt="CGI render"
+                  className="absolute inset-0 w-full h-full object-contain"
                 />
 
-                {/* Studio layer (revealed after transformation) */}
-                <div ref={studioLayerRef} className="absolute inset-0 opacity-0" style={{ background: STUDIO_BG }} />
+                {/* Studio (transformed) layer — same Accord on a real dealership lot */}
+                <div ref={studioLayerRef} className="absolute inset-0 opacity-0 bg-[#1a1a1a]" />
                 <img
                   ref={studioCarRef}
-                  src={studioExt2}
-                  alt="Studio output"
+                  src={cgiTransformedFront}
+                  alt="Real photo from parent"
                   className="absolute inset-0 w-full h-full object-cover opacity-0"
                 />
 
@@ -435,7 +427,7 @@ export function CGIUpgradeModal({
                 <div className="absolute bottom-[10px] left-[10px] right-[10px] flex items-end justify-between">
                   <div className="bg-black/55 backdrop-blur-sm rounded-[8px] px-[10px] py-[5px]">
                     <p className="text-[11px] font-bold text-white font-['Inter:Bold',sans-serif] leading-tight">
-                      2021 Skoda Kamiq SE
+                      2020 Honda Accord Sport
                     </p>
                     <p className="text-[9px] text-white/70 font-['Inter:Regular',sans-serif] leading-tight mt-[1px]">
                       STK-3218 · was on a stock render

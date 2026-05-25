@@ -20,9 +20,9 @@ import spin360Mov from "../assets/vehicle/spin-360.mov";
 
 export interface VehicleForVDP {
   id: number | string;
-  name: string;        // e.g. "2024 Toyota Tundra 1794"
+  name: string;        // e.g. "2020 Skoda Kamiq SE"
   stk: string;         // e.g. "STK-2107"
-  vin: string;         // e.g. "5TFMA5DB0TX389497"
+  vin: string;         // e.g. "TMBJF7NJ6LG502118"
   trim?: string;       // "1794"
   smartMatch?: boolean;
 }

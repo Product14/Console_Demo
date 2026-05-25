@@ -285,7 +285,7 @@ function RadialDiagram() {
           <img src={studioExt1} alt="" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute bottom-[4px] left-[4px] right-[4px] bg-black/55 backdrop-blur-sm rounded-[4px] px-[5px] py-[2px]">
             <p className="text-[8px] font-bold text-white font-['Inter:Bold',sans-serif] leading-tight truncate">
-              2024 Toyota Tundra 1794
+              2020 Skoda Kamiq SE
             </p>
           </div>
         </div>
