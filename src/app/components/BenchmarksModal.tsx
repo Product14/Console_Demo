@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { Calculator, ChevronDown, ChevronUp, ArrowRight, X, Info } from "lucide-react";
+import { Calculator, ArrowRight, X, Info } from "lucide-react";
+import { HoldingCostCalculatorModal } from "./HoldingCostCalculatorModal";
 
 export interface Benchmarks {
   daysToFrontline: number;
@@ -17,119 +18,6 @@ interface Props {
   imsName?: string;
   onClose?: () => void;
   onSubmit: (b: Benchmarks) => void;
-}
-
-// ─── Mini calculator ─────────────────────────────────────────────────────────
-
-function Calc({
-  onApply,
-}: {
-  onApply: (perDay: number) => void;
-}) {
-  const [value, setValue] = useState(25000);
-  const [apr, setApr] = useState(7);
-  const [other, setOther] = useState(30);
-
-  const floorPlanPerDay = (value * (apr / 100)) / 365;
-  const total = floorPlanPerDay + other;
-
-  return (
-    <div className="mt-[14px] rounded-[12px] border border-black/8 bg-[#FAFAFB] p-[16px]">
-      <div className="flex items-center gap-[8px] mb-[12px]">
-        <Calculator size={14} className="text-[#4600F2]" />
-        <p className="text-[12px] uppercase tracking-[0.8px] font-bold text-black/55 font-['Inter:Bold',sans-serif]">
-          Holding cost calculator
-        </p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-[10px]">
-        <CalcField
-          label="Avg vehicle value"
-          prefix="$"
-          value={value}
-          step={500}
-          onChange={setValue}
-        />
-        <CalcField
-          label="Floor plan APR"
-          suffix="%"
-          value={apr}
-          step={0.25}
-          decimals={2}
-          onChange={setApr}
-        />
-        <CalcField
-          label="Other daily costs"
-          prefix="$"
-          value={other}
-          step={1}
-          onChange={setOther}
-          hint="depreciation, lot, admin"
-        />
-      </div>
-
-      {/* Live result */}
-      <div className="mt-[14px] flex items-center justify-between gap-[12px] rounded-[10px] bg-white border border-black/8 px-[14px] py-[10px]">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.8px] font-bold text-black/55 font-['Inter:Bold',sans-serif]">
-            Estimated holding cost
-          </p>
-          <p className="mt-[2px] text-[20px] font-bold text-[#0a0a0a] font-['Inter:Bold',sans-serif] leading-none">
-            ${total.toFixed(2)}
-            <span className="text-[12px] text-black/45 font-medium ml-[4px]">/ day per vehicle</span>
-          </p>
-          <p className="mt-[4px] text-[10px] text-black/45 font-['Inter:Regular',sans-serif]">
-            ${floorPlanPerDay.toFixed(2)} floor plan + ${other.toFixed(2)} other
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => onApply(Math.round(total))}
-          className="h-[36px] px-[16px] rounded-[8px] bg-[#4600F2] hover:bg-[#3a00d0] text-white text-[12px] font-semibold font-['Inter:Semi_Bold',sans-serif] transition-colors whitespace-nowrap"
-        >
-          Use this value
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function CalcField({
-  label, prefix, suffix, value, step = 1, decimals = 0, hint, onChange,
-}: {
-  label: string;
-  prefix?: string;
-  suffix?: string;
-  value: number;
-  step?: number;
-  decimals?: number;
-  hint?: string;
-  onChange: (n: number) => void;
-}) {
-  return (
-    <div>
-      <label className="block text-[10px] uppercase tracking-[0.6px] font-bold text-black/55 mb-[4px] font-['Inter:Bold',sans-serif]">
-        {label}
-      </label>
-      <div className="flex items-center bg-white border border-black/10 rounded-[8px] h-[36px] px-[10px] focus-within:border-[#4600F2]">
-        {prefix && <span className="text-[12px] text-black/55 mr-[2px]">{prefix}</span>}
-        <input
-          type="number"
-          value={value}
-          step={step}
-          onChange={(e) => onChange(Number(e.target.value) || 0)}
-          className="flex-1 bg-transparent outline-none text-[13px] font-semibold text-[#0a0a0a] font-['Inter:Semi_Bold',sans-serif] min-w-0"
-        />
-        {suffix && <span className="text-[12px] text-black/55 ml-[2px]">{suffix}</span>}
-      </div>
-      {hint && (
-        <p className="mt-[3px] text-[9px] text-black/40 font-['Inter:Regular',sans-serif] truncate">
-          {hint}
-        </p>
-      )}
-      {!hint && <p className="mt-[3px] text-[9px]">&nbsp;</p>}
-    </div>
-  );
 }
 
 // ─── Primary number field with prefix/suffix ────────────────────────────────
@@ -170,14 +58,14 @@ export function BenchmarksModal({ open, imsName, onClose, onSubmit }: Props) {
 
   const [days, setDays] = useState(DEFAULT_BENCHMARKS.daysToFrontline);
   const [cost, setCost] = useState(DEFAULT_BENCHMARKS.holdingCostPerDay);
-  const [calcOpen, setCalcOpen] = useState(false);
+  const [calcModalOpen, setCalcModalOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     // Reset to defaults each time it opens
     setDays(DEFAULT_BENCHMARKS.daysToFrontline);
     setCost(DEFAULT_BENCHMARKS.holdingCostPerDay);
-    setCalcOpen(false);
+    setCalcModalOpen(false);
 
     const overlay = overlayRef.current;
     const panel = panelRef.current;
@@ -244,22 +132,12 @@ export function BenchmarksModal({ open, imsName, onClose, onSubmit }: Props) {
 
           <button
             type="button"
-            onClick={() => setCalcOpen((v) => !v)}
+            onClick={() => setCalcModalOpen(true)}
             className="mt-[12px] inline-flex items-center gap-[6px] text-[12px] font-semibold text-[#4600F2] hover:text-[#3a00d0] transition-colors font-['Inter:Semi_Bold',sans-serif]"
           >
             <Calculator size={13} />
-            {calcOpen ? "Hide calculator" : "Don't know? Let's calculate"}
-            {calcOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            Don't know? Let's calculate →
           </button>
-
-          {calcOpen && (
-            <Calc
-              onApply={(v) => {
-                setCost(v);
-                setCalcOpen(false);
-              }}
-            />
-          )}
 
           {/* Info strip */}
           <div className="mt-[14px] flex items-start gap-[8px] px-[12px] py-[10px] rounded-[10px] bg-[rgba(70,0,242,0.04)] border border-[rgba(70,0,242,0.12)]">
@@ -293,6 +171,13 @@ export function BenchmarksModal({ open, imsName, onClose, onSubmit }: Props) {
           </button>
         </div>
       </div>
+
+      {/* Holding cost calculator — opens as a separate modal on top */}
+      <HoldingCostCalculatorModal
+        open={calcModalOpen}
+        onClose={() => setCalcModalOpen(false)}
+        onApply={(v) => { setCost(v); setCalcModalOpen(false); }}
+      />
     </div>
   );
 }

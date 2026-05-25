@@ -14,6 +14,7 @@ import {
 import { PublishModal } from "./PublishModal";
 import { PublishingProgressModal } from "./PublishingProgressModal";
 import { PublishedSummaryModal } from "./PublishedSummaryModal";
+import { SyndicationPitchModal } from "./SyndicationPitchModal";
 import { PublishingCell } from "./PublishingCell";
 import { SelectionActionBar } from "./SelectionActionBar";
 import { SmartCampaignModal } from "./SmartCampaignModal";
@@ -525,8 +526,9 @@ export function DashboardScreen({
   const daysSavedTransform = Math.round((benchmarks.daysToFrontline - daysAfterSmartMatch) * 10) / 10;
   const containerRef = useRef<HTMLDivElement>(null);
   const [summaryOpen, setSummaryOpen] = useState(true);
-  type PubPhase = "none" | "select" | "progress" | "recap";
+  type PubPhase = "none" | "syndicationPitch" | "select" | "progress" | "recap";
   const [pubPhase, setPubPhase] = useState<PubPhase>("none");
+  const [syndicationSeen, setSyndicationSeen] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [published, setPublished] = useState<PublishedTo[]>([]);
   type AgeFilter = "all" | "lt40" | "gt40" | "gt60";
@@ -846,7 +848,11 @@ export function DashboardScreen({
       <TransformationSummaryModal
         open={summaryOpen}
         onClose={() => setSummaryOpen(false)}
-        onPublish={() => { setSummaryOpen(false); setPubPhase("select"); }}
+        onPublish={() => {
+          setSummaryOpen(false);
+          // First time we get to publishing, show the syndication pitch; afterwards skip to channel pick
+          setPubPhase(syndicationSeen ? "select" : "syndicationPitch");
+        }}
         summary={{
           rawTransformed: 67,
           rawTotal: 67,
@@ -868,6 +874,14 @@ export function DashboardScreen({
       />
 
       {/* Publish flow */}
+      <SyndicationPitchModal
+        open={pubPhase === "syndicationPitch"}
+        completed={syndicationSeen}
+        totalListings={SUMMARY_TOTAL_FIXED}
+        onClose={() => setPubPhase("none")}
+        onBack={() => { setPubPhase("none"); setSummaryOpen(true); }}
+        onContinue={() => { setSyndicationSeen(true); setPubPhase("select"); }}
+      />
       <PublishModal
         open={pubPhase === "select"}
         totalListings={SUMMARY_TOTAL_FIXED}
