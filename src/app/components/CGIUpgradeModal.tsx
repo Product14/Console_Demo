@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import gsap from "gsap";
-import { X, Check, Layers, ArrowRight, Image as ImageIcon, Camera, TrendingUp, Eye, Award } from "lucide-react";
-import imgCar from "../../imports/Frame2147240604/5dc495ae052ef514c9683fd2a095ba455d93a330.png";
+import {
+  X, Check, Layers, ArrowRight, TrendingUp, Wand2, Eye, Award, Sparkles,
+} from "lucide-react";
+
+import studioExt1 from "../assets/vehicle/studio-exterior-1.jpg";
+import studioExt2 from "../assets/vehicle/studio-exterior-2.jpg";
 
 interface Props {
   open: boolean;
@@ -12,280 +17,47 @@ interface Props {
   totalCgi?: number;
 }
 
-type Status = "scanning" | "matching" | "applied";
-
-type UpgradeCard = {
-  id: number;
-  name: string;
-  stk: string;
-  trim: string;
-  status: Status;
-  matchedFrom: string;
-};
-
-const NEW_VEHICLES = [
-  { name: "2025 Ford F-150 XLT",            trim: "XLT · Iconic Silver",     stk: "STK-3210" },
-  { name: "2025 Ford Mustang GT",           trim: "GT Premium · Race Red",    stk: "STK-3212" },
-  { name: "2025 Ford Explorer Limited",     trim: "Limited · Star White",     stk: "STK-3214" },
-  { name: "2025 Ford Bronco Outer Banks",   trim: "Outer Banks · Cactus Gray",stk: "STK-3216" },
-  { name: "2025 Ford Maverick Lariat",      trim: "Lariat · Hot Pepper",      stk: "STK-3218" },
-  { name: "2025 Ford Escape ST-Line",       trim: "ST-Line · Atlas Blue",     stk: "STK-3220" },
-  { name: "2025 Ford Edge ST",              trim: "ST · Carbonized Gray",     stk: "STK-3222" },
-  { name: "2025 Ford Ranger Lariat",        trim: "Lariat · Velocity Blue",   stk: "STK-3224" },
-];
-
-// CGI / stock look — flat, slightly cartoonish, pastel
+// CGI / stock look — flat pastel, slightly desaturated
 const CGI_BG = `
-  repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0 6px, transparent 6px 12px),
+  repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 6px, transparent 6px 12px),
   radial-gradient(ellipse at 50% 100%, rgba(127,106,242,0.22) 0%, transparent 70%),
   linear-gradient(180deg, #E9E5FF 0%, #D7CDFB 60%, #B8A8F3 100%)
 `;
-
-// Real studio photo look — same as the other modals
-const REAL_BG = `
+const STUDIO_BG = `
   radial-gradient(ellipse at 50% 100%, rgba(245,158,11,0.18) 0%, transparent 70%),
   linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 55%, #DDE3EC 100%)
 `;
 
-// ─── Before/After hero — sells the upgrade ────────────────────────────────────
-
-function UpgradeDiagram() {
-  const beamRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const beam = beamRef.current;
-    if (!beam) return;
-    const tween = gsap.fromTo(
-      beam,
-      { x: "-110%", opacity: 0 },
-      {
-        x: "110%",
-        opacity: 1,
-        duration: 1.8,
-        ease: "power1.inOut",
-        repeat: -1,
-        repeatDelay: 0.4,
-      }
-    );
-    return () => { tween.kill(); };
-  }, []);
-
-  return (
-    <div className="rounded-[14px] border border-black/8 bg-white p-[18px]">
-      <div className="flex items-center gap-[8px] mb-[12px]">
-        <TrendingUp size={16} className="text-[#F59E0B]" />
-        <p className="text-[12px] font-semibold uppercase tracking-[1px] text-black/55 font-['Inter:Semi_Bold',sans-serif]">
-          From placeholder to authentic
-        </p>
-      </div>
-      <div className="relative flex items-center gap-[20px] justify-center">
-        {/* CGI / stock tile */}
-        <div
-          className="relative shrink-0 w-[200px] aspect-[4/3] rounded-[12px] overflow-hidden border border-black/10"
-          style={{ background: CGI_BG }}
-        >
-          <img
-            src={imgCar}
-            alt=""
-            className="absolute inset-0 m-auto w-[78%] h-[78%] object-contain opacity-90"
-            style={{ filter: "saturate(0.75) brightness(1.05) contrast(0.85)" }}
-          />
-          <div className="absolute top-[8px] left-[8px]">
-            <span className="inline-flex items-center gap-[4px] px-[8px] py-[3px] rounded-full bg-[#7F6AF2] text-white text-[10px] font-semibold uppercase tracking-[0.6px]">
-              <ImageIcon size={10} />
-              CGI / Stock
-            </span>
-          </div>
-          <div className="absolute bottom-[8px] left-[8px] right-[8px]">
-            <p className="text-[10px] text-white/95 font-semibold font-['Inter:Semi_Bold',sans-serif] bg-black/45 backdrop-blur-sm rounded px-[6px] py-[2px] inline-block">
-              Today
-            </p>
-          </div>
-        </div>
-
-        {/* Beam */}
-        <div className="relative shrink-0 flex flex-col items-center gap-[6px]">
-          <div className="relative w-[80px] h-[28px] rounded-full bg-[rgba(245,158,11,0.12)] overflow-hidden flex items-center justify-center">
-            <div
-              ref={beamRef}
-              className="absolute inset-y-0 w-[60%]"
-              style={{
-                background: "linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.65) 50%, transparent 100%)",
-              }}
-            />
-            <ArrowRight size={14} className="text-[#F59E0B] relative z-10" strokeWidth={2.5} />
-          </div>
-          <p className="text-[9px] font-bold uppercase tracking-[0.8px] text-[#F59E0B] font-['Inter:Bold',sans-serif]">
-            Smart Match upgrade
-          </p>
-        </div>
-
-        {/* Real photo tile */}
-        <div
-          className="relative shrink-0 w-[200px] aspect-[4/3] rounded-[12px] overflow-hidden border-[2px] border-[#10B981] shadow-[0_0_0_3px_rgba(16,185,129,0.15)]"
-          style={{ background: REAL_BG }}
-        >
-          <img
-            src={imgCar}
-            alt=""
-            className="absolute inset-0 m-auto w-[78%] h-[78%] object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.2)]"
-          />
-          <div className="absolute top-[8px] left-[8px]">
-            <span className="inline-flex items-center gap-[4px] px-[8px] py-[3px] rounded-full bg-[#10B981] text-white text-[10px] font-semibold uppercase tracking-[0.6px]">
-              <Camera size={10} />
-              Real photo
-            </span>
-          </div>
-          <div className="absolute bottom-[8px] left-[8px] right-[8px]">
-            <p className="text-[10px] text-white/95 font-semibold font-['Inter:Semi_Bold',sans-serif] bg-[#10B981] rounded px-[6px] py-[2px] inline-block">
-              After Smart Match
-            </p>
-          </div>
-        </div>
-      </div>
-      <p className="mt-[14px] text-[12px] text-black/55 text-center font-['Inter:Regular',sans-serif] leading-[18px] max-w-[560px] mx-auto">
-        Same trim, same color — real photos from a vehicle already on your lot.
-      </p>
-    </div>
-  );
-}
-
-// ─── Upgrade card ─────────────────────────────────────────────────────────────
-
-function UpgradeTile({ card }: { card: UpgradeCard }) {
-  const cgiLayerRef = useRef<HTMLDivElement>(null);
-  const realLayerRef = useRef<HTMLDivElement>(null);
-  const cgiCarRef = useRef<HTMLImageElement>(null);
-  const realCarRef = useRef<HTMLImageElement>(null);
-  const scanRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (card.status === "scanning") {
-      if (scanRef.current) {
-        gsap.fromTo(
-          scanRef.current,
-          { y: "-100%", opacity: 0 },
-          { y: "100%", opacity: 1, duration: 1.2, ease: "power1.inOut" }
-        );
-      }
-    } else if (card.status === "applied") {
-      if (cgiLayerRef.current) gsap.to(cgiLayerRef.current, { opacity: 0, duration: 0.5, ease: "power2.out" });
-      if (cgiCarRef.current)   gsap.to(cgiCarRef.current,   { opacity: 0, duration: 0.4 });
-      if (realLayerRef.current) gsap.fromTo(realLayerRef.current, { opacity: 0 }, { opacity: 1, duration: 0.55, ease: "power2.out" });
-      if (realCarRef.current)   gsap.fromTo(realCarRef.current,   { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.55, ease: "power3.out" });
-      if (scanRef.current)      gsap.to(scanRef.current, { opacity: 0, duration: 0.3 });
-    }
-  }, [card.status]);
-
-  return (
-    <div className="relative bg-white rounded-[12px] border border-black/8 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-      <div className="relative aspect-[4/3] overflow-hidden">
-        {/* CGI layer (initial state) */}
-        <div ref={cgiLayerRef} className="absolute inset-0" style={{ background: CGI_BG }} />
-        <img
-          ref={cgiCarRef}
-          src={imgCar}
-          alt=""
-          className="absolute inset-0 m-auto w-[78%] h-[78%] object-contain"
-          style={{ filter: "saturate(0.75) brightness(1.05) contrast(0.85)", opacity: 0.95 }}
-        />
-
-        {/* Real layer (revealed when applied) */}
-        <div ref={realLayerRef} className="absolute inset-0 opacity-0" style={{ background: REAL_BG }} />
-        {card.status === "applied" && (
-          <img
-            ref={realCarRef}
-            src={imgCar}
-            alt={card.name}
-            className="absolute inset-0 m-auto w-[78%] h-[78%] object-contain opacity-0 drop-shadow-[0_8px_12px_rgba(0,0,0,0.25)]"
-          />
-        )}
-
-        {/* Scan beam */}
-        <div
-          ref={scanRef}
-          aria-hidden
-          className="pointer-events-none absolute left-0 right-0 top-0 h-[40%] opacity-0"
-          style={{
-            background: "linear-gradient(180deg, transparent 0%, rgba(245,158,11,0.4) 50%, transparent 100%)",
-            boxShadow: "0 0 30px 8px rgba(245,158,11,0.4)",
-          }}
-        />
-
-        {/* Status badge */}
-        <div className="absolute top-[8px] left-[8px]">
-          {card.status === "scanning" && (
-            <span className="inline-flex items-center gap-[4px] px-[8px] py-[3px] rounded-full bg-[#7F6AF2] text-white text-[10px] font-semibold uppercase tracking-[0.6px]">
-              <ImageIcon size={10} />
-              CGI
-            </span>
-          )}
-          {card.status === "matching" && (
-            <span className="inline-flex items-center gap-[4px] px-[8px] py-[3px] rounded-full bg-[#F59E0B] text-white text-[10px] font-semibold uppercase tracking-[0.6px]">
-              <Layers size={10} />
-              Matching
-            </span>
-          )}
-          {card.status === "applied" && (
-            <span className="inline-flex items-center gap-[4px] px-[8px] py-[3px] rounded-full bg-[#10B981] text-white text-[10px] font-semibold uppercase tracking-[0.6px]">
-              <Check size={10} strokeWidth={3} />
-              Real photo
-            </span>
-          )}
-        </div>
-
-        <div className="absolute top-[8px] right-[8px]">
-          <span className="text-[9px] font-bold tracking-[1px] uppercase px-[6px] py-[2px] rounded bg-[#4600F2] text-white font-['Inter:Bold',sans-serif]">
-            New
-          </span>
-        </div>
-
-        {card.status === "applied" && (
-          <div className="absolute bottom-[8px] left-[8px] right-[8px] flex items-center gap-[4px] bg-black/55 backdrop-blur-sm rounded-[6px] px-[6px] py-[3px]">
-            <Layers size={9} className="text-[#FBBF24] shrink-0" />
-            <p className="text-[9px] text-white truncate font-['Inter:Medium',sans-serif] font-medium">
-              From <span className="font-bold">{card.matchedFrom}</span>
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="px-[12px] py-[10px]">
-        <p className="text-[12px] font-semibold text-[#0a0a0a] font-['Inter:Semi_Bold',sans-serif] truncate">
-          {card.name}
-        </p>
-        <p className="text-[10px] text-black/45 mt-[1px] font-['Inter:Regular',sans-serif] truncate">
-          {card.stk} · {card.trim}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
-export function CGIUpgradeModal({ open, onClose, onNext, onBack, completed, totalCgi = 134 }: Props) {
+export function CGIUpgradeModal({
+  open, onClose, onNext, onBack, completed, totalCgi = 134,
+}: Props) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const cgiLayerRef = useRef<HTMLDivElement>(null);
+  const cgiCarRef = useRef<HTMLImageElement>(null);
+  const studioLayerRef = useRef<HTMLDivElement>(null);
+  const studioCarRef = useRef<HTMLImageElement>(null);
+  const scanRef = useRef<HTMLDivElement>(null);
+  const wandRef = useRef<HTMLDivElement>(null);
+  const burstRef = useRef<HTMLDivElement>(null);
+  const lineRef = useRef<SVGPathElement>(null);
+  const flowRef = useRef<SVGPathElement>(null);
+  const orbRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
 
-  const VISIBLE = 8;
-  const [cards, setCards] = useState<UpgradeCard[]>(() =>
-    Array.from({ length: VISIBLE }, (_, i) => ({
-      id: i + 1,
-      name: NEW_VEHICLES[i % NEW_VEHICLES.length].name,
-      stk: NEW_VEHICLES[i % NEW_VEHICLES.length].stk,
-      trim: NEW_VEHICLES[i % NEW_VEHICLES.length].trim,
-      status: "scanning" as Status,
-      matchedFrom: `STK-${2300 + i}`,
-    }))
-  );
+  type Phase = "cgi" | "scanning" | "matched" | "transforming" | "done";
+  const [phase, setPhase] = useState<Phase>("cgi");
+  const [path, setPath] = useState("");
   const [upgraded, setUpgraded] = useState(0);
-  const nextIdRef = useRef(VISIBLE + 1);
-  // Smart Match only swaps CGI for real photos on new vehicles with a spec-matched donor
+
   const eligible = Math.round(totalCgi * 0.72);
 
-  // Entrance
+  // Modal entrance
   useEffect(() => {
     if (!open) return;
     const overlay = overlayRef.current;
@@ -294,92 +66,167 @@ export function CGIUpgradeModal({ open, onClose, onNext, onBack, completed, tota
     gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power2.out" });
     gsap.fromTo(
       panel,
-      { y: 24, opacity: 0, scale: 0.97 },
-      { y: 0, opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" }
+      { y: 24, opacity: 0, scale: 0.96 },
+      { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }
     );
   }, [open]);
 
-  // Reset on open
+  // Reset state every open
   useEffect(() => {
     if (!open) return;
-    setCards(
-      Array.from({ length: VISIBLE }, (_, i) => ({
-        id: i + 1,
-        name: NEW_VEHICLES[i % NEW_VEHICLES.length].name,
-        stk: NEW_VEHICLES[i % NEW_VEHICLES.length].stk,
-        trim: NEW_VEHICLES[i % NEW_VEHICLES.length].trim,
-        status: "scanning" as Status,
-        matchedFrom: `STK-${2300 + i}`,
-      }))
-    );
+    setPhase("cgi");
     setUpgraded(0);
-    nextIdRef.current = VISIBLE + 1;
+    setPath("");
+    [
+      [cgiLayerRef.current, { opacity: 1 }],
+      [cgiCarRef.current, { opacity: 0.95 }],
+      [studioLayerRef.current, { opacity: 0 }],
+      [studioCarRef.current, { opacity: 0 }],
+      [scanRef.current, { opacity: 0, y: "-100%" }],
+      [wandRef.current, { opacity: 0, scale: 0.6, rotation: 0 }],
+      [burstRef.current, { opacity: 0, scale: 0.8 }],
+      [orbRef.current, { opacity: 0, scale: 0.5, x: 0, y: 0 }],
+    ].forEach(([el, props]) => { if (el) gsap.set(el, props as gsap.TweenVars); });
   }, [open]);
 
-  // Pipeline
+  // Compute parent → hero path (the line along which the orb travels)
   useEffect(() => {
     if (!open) return;
-    const kickoff = setTimeout(() => {
-      setCards((prev) => prev.map((c, i) => (i < 2 ? { ...c, status: "matching" } : c)));
-    }, 300);
-
-    const tick = setInterval(() => {
-      setCards((prev) => {
-        const next = [...prev];
-        const matchingIdx = next.findIndex((c) => c.status === "matching");
-        if (matchingIdx !== -1) {
-          next[matchingIdx] = { ...next[matchingIdx], status: "applied" };
-          setUpgraded((n) => n + 1);
-        }
-        const scanningIdx = next.findIndex((c) => c.status === "scanning");
-        if (scanningIdx !== -1) {
-          next[scanningIdx] = { ...next[scanningIdx], status: "matching" };
-        }
-        return next;
-      });
-    }, 1600);
-
-    const rotate = setInterval(() => {
-      setCards((prev) => {
-        const appliedIdx = prev.findIndex((c) => c.status === "applied");
-        if (appliedIdx === -1) return prev;
-        const next = [...prev];
-        const newId = nextIdRef.current++;
-        const veh = NEW_VEHICLES[(newId - 1) % NEW_VEHICLES.length];
-        next[appliedIdx] = {
-          id: newId,
-          name: veh.name,
-          stk: veh.stk,
-          trim: veh.trim,
-          status: "scanning",
-          matchedFrom: `STK-${2300 + newId - 1}`,
-        };
-        return next;
-      });
-    }, 2400);
-
+    const compute = () => {
+      const stage = stageRef.current;
+      const p = parentRef.current;
+      const h = heroRef.current;
+      if (!stage || !p || !h) return;
+      const sr = stage.getBoundingClientRect();
+      const pr = p.getBoundingClientRect();
+      const hr = h.getBoundingClientRect();
+      const px = pr.right - sr.left;
+      const py = pr.top + pr.height / 2 - sr.top;
+      const hx = hr.left - sr.left;
+      const hy = hr.top + hr.height / 2 - sr.top;
+      const dx = (hx - px) * 0.5;
+      setPath(`M ${px} ${py} C ${px + dx} ${py}, ${hx - dx} ${hy}, ${hx} ${hy}`);
+    };
+    const id = requestAnimationFrame(compute);
+    window.addEventListener("resize", compute);
     return () => {
-      clearTimeout(kickoff);
-      clearInterval(tick);
-      clearInterval(rotate);
+      cancelAnimationFrame(id);
+      window.removeEventListener("resize", compute);
     };
   }, [open]);
 
+  // The full animation timeline: cgi (idle) → scanning → matched → transforming → done
+  useEffect(() => {
+    if (!open || !path) return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ delay: 0.5 });
+
+      // 1) PHASE: scanning — scan beam sweeps the hero
+      tl.call(() => setPhase("scanning"));
+      tl.fromTo(
+        scanRef.current,
+        { y: "-100%", opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.2, ease: "power2.out" }
+      );
+      tl.to(scanRef.current, { y: "100%", duration: 1.4, ease: "power1.inOut" });
+      tl.to(scanRef.current, { opacity: 0, duration: 0.25 }, "-=0.2");
+
+      // 2) PHASE: matched — parent line draws + flowing dash starts
+      tl.call(() => setPhase("matched"));
+      const line = lineRef.current;
+      const flow = flowRef.current;
+      if (line && flow) {
+        const len = line.getTotalLength();
+        gsap.set(line, { strokeDasharray: len, strokeDashoffset: len, opacity: 1 });
+        tl.to(line, { strokeDashoffset: 0, duration: 0.9, ease: "power2.out" });
+
+        gsap.set(flow, { strokeDasharray: `${len * 0.18} ${len * 0.82}`, strokeDashoffset: len, opacity: 1 });
+        gsap.to(flow, {
+          strokeDashoffset: 0,
+          duration: 1.6,
+          ease: "none",
+          repeat: -1,
+        });
+      }
+
+      // 3) Send an orb from parent to hero
+      const orb = orbRef.current;
+      if (line && orb) {
+        const len = line.getTotalLength();
+        const obj = { p: 0 };
+        tl.fromTo(orb, { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.15, ease: "power2.out" });
+        tl.to(obj, {
+          p: 1,
+          duration: 0.9,
+          ease: "power1.inOut",
+          onUpdate: () => {
+            const pt = line.getPointAtLength(obj.p * len);
+            gsap.set(orb, { x: pt.x - 18, y: pt.y - 12 });
+          },
+        }, "<");
+        tl.to(orb, { opacity: 0, scale: 0.5, duration: 0.15 }, "+=0");
+      }
+
+      // 4) PHASE: transforming — wand pop + burst + cgi → studio crossfade
+      tl.call(() => setPhase("transforming"));
+      tl.fromTo(
+        wandRef.current,
+        { opacity: 0, scale: 0.4, rotation: -20 },
+        { opacity: 1, scale: 1, rotation: 0, duration: 0.4, ease: "back.out(2)" }
+      );
+      tl.to(burstRef.current, { scale: 1.4, opacity: 1, duration: 0.45, ease: "power2.out" }, "<");
+      tl.to(cgiLayerRef.current,  { opacity: 0, duration: 0.55, ease: "power2.out" }, "<+=0.05");
+      tl.to(cgiCarRef.current,    { opacity: 0, duration: 0.5,  ease: "power2.out" }, "<");
+      tl.fromTo(
+        studioLayerRef.current,
+        { opacity: 0, scale: 1.04 },
+        { opacity: 1, scale: 1, duration: 0.6, ease: "power2.out" },
+        "<"
+      );
+      tl.fromTo(
+        studioCarRef.current,
+        { opacity: 0, scale: 0.96 },
+        { opacity: 1, scale: 1, duration: 0.6, ease: "power3.out" },
+        "<"
+      );
+      tl.to(burstRef.current, { opacity: 0, duration: 0.4, ease: "power2.in" }, "+=0.05");
+      tl.to(wandRef.current, { opacity: 0, scale: 0.7, y: -8, duration: 0.3, ease: "power2.in" }, "<");
+
+      // 5) PHASE: done — flip status to upgraded; counter eventually ticks up to eligible
+      tl.call(() => setPhase("done"));
+    });
+
+    return () => ctx.revert();
+  }, [open, path]);
+
+  // Counter tick-up after the hero magic completes — shows the whole bucket processing
+  useEffect(() => {
+    if (!open || phase !== "done") return;
+    const obj = { v: 1 };
+    const tween = gsap.to(obj, {
+      v: eligible,
+      duration: 5,
+      ease: "power1.out",
+      onUpdate: () => setUpgraded(Math.round(obj.v)),
+    });
+    return () => { tween.kill(); };
+  }, [open, phase, eligible]);
+
+  // Progress bar
   useEffect(() => {
     const bar = progressBarRef.current;
     if (!bar) return;
     const pct = Math.min(100, (upgraded / eligible) * 100);
-    gsap.to(bar, { width: `${pct}%`, duration: 0.5, ease: "power2.out" });
+    gsap.to(bar, { width: `${pct}%`, duration: 0.4, ease: "power2.out" });
   }, [upgraded, eligible]);
 
   if (!open) return null;
 
-  const displayedUpgraded = Math.min(upgraded, eligible);
-
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[60] bg-black/55 backdrop-blur-[2px] flex items-center justify-center p-6"
+      className="fixed inset-0 z-[70] bg-black/55 backdrop-blur-[2px] flex items-center justify-center p-4"
     >
       <div
         ref={panelRef}
@@ -415,7 +262,7 @@ export function CGIUpgradeModal({ open, onClose, onNext, onBack, completed, tota
                   )}
                 </div>
                 <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif]">
-                  Swapping renders for studio photos from matching vehicles.
+                  Swapping renders for studio photos from a matching parent.
                 </p>
               </div>
             </div>
@@ -436,7 +283,7 @@ export function CGIUpgradeModal({ open, onClose, onNext, onBack, completed, tota
                 Upgraded to real photos
               </p>
               <p className="mt-[4px] text-[22px] font-bold text-[#F59E0B] font-['Inter:Bold',sans-serif] leading-none">
-                {displayedUpgraded}<span className="text-black/30 text-[14px] font-medium"> / {eligible}</span>
+                {upgraded}<span className="text-black/30 text-[14px] font-medium"> / {eligible}</span>
               </p>
             </div>
             <div className="rounded-[10px] border border-black/8 bg-white px-[14px] py-[12px] flex items-center gap-[10px]">
@@ -468,29 +315,184 @@ export function CGIUpgradeModal({ open, onClose, onNext, onBack, completed, tota
               />
             </div>
             <p className="text-[11px] text-black/50 font-medium font-['Inter:Medium',sans-serif]">
-              Upgrading in progress
+              {phase === "done" ? "Upgrading in progress" : "Detecting CGI listing…"}
             </p>
           </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-auto px-[28px] py-[18px] bg-[#FAFAFB]">
-          <UpgradeDiagram />
+        {/* Stage — parent (left, small) + hero CGI vehicle (right, large) */}
+        <div ref={stageRef} className="relative flex-1 px-[28px] py-[20px] bg-[#FAFAFB] overflow-hidden">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)] gap-[40px] h-full items-center">
+            {/* Parent column */}
+            <div ref={parentRef}>
+              <p className="text-[9px] uppercase tracking-[0.8px] font-bold text-black/55 mb-[6px] font-['Inter:Bold',sans-serif]">
+                Parent vehicle · real photos
+              </p>
+              <div className="relative rounded-[12px] overflow-hidden border-[2px] border-[#00C488] shadow-[0_8px_24px_rgba(0,196,136,0.18)] aspect-[16/11]">
+                <img src={studioExt1} alt="Parent" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute top-[8px] left-[8px]">
+                  <span className="inline-flex items-center gap-[4px] px-[7px] py-[2px] rounded-full bg-[#00C488] text-white text-[9px] font-bold uppercase tracking-[0.5px]">
+                    <Check size={9} strokeWidth={3} />
+                    Parent
+                  </span>
+                </div>
+                <div className="absolute bottom-[6px] left-[6px] right-[6px] bg-black/55 backdrop-blur-sm rounded-[6px] px-[8px] py-[4px]">
+                  <p className="text-[9px] font-bold text-white font-['Inter:Bold',sans-serif] leading-tight">
+                    2020 Skoda Kamiq SE
+                  </p>
+                  <p className="text-[8px] text-white/70 leading-tight mt-[1px]">STK-2107 · full media set</p>
+                </div>
+              </div>
+              <p className="mt-[8px] text-[10px] text-black/55 font-['Inter:Regular',sans-serif] leading-tight">
+                Same trim, same color — its photos donate to the CGI listing.
+              </p>
+            </div>
 
-          <div className="mt-[18px]">
-            <p className="text-[11px] uppercase tracking-[1px] font-semibold text-black/55 mb-[8px] font-['Inter:Semi_Bold',sans-serif]">
-              CGI listings being upgraded live
-            </p>
-            <div className="grid grid-cols-4 gap-[14px]">
-              {cards.map((c) => (
-                <UpgradeTile key={c.id} card={c} />
-              ))}
+            {/* Hero CGI vehicle */}
+            <div className="flex flex-col items-center gap-[10px]">
+              <p className="self-start text-[9px] uppercase tracking-[0.8px] font-bold text-black/55 font-['Inter:Bold',sans-serif]">
+                CGI listing → real photo
+              </p>
+              <div ref={heroRef} className="relative rounded-[14px] overflow-hidden border border-black/8 aspect-[16/10] w-full">
+                {/* CGI layer (initial state) */}
+                <div ref={cgiLayerRef} className="absolute inset-0" style={{ background: CGI_BG }} />
+                <img
+                  ref={cgiCarRef}
+                  src={studioExt2}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ filter: "saturate(0.7) brightness(1.05) contrast(0.82) hue-rotate(-8deg)" }}
+                />
+
+                {/* Studio layer (revealed after transformation) */}
+                <div ref={studioLayerRef} className="absolute inset-0 opacity-0" style={{ background: STUDIO_BG }} />
+                <img
+                  ref={studioCarRef}
+                  src={studioExt2}
+                  alt="Studio output"
+                  className="absolute inset-0 w-full h-full object-cover opacity-0"
+                />
+
+                {/* Scan beam */}
+                <div
+                  ref={scanRef}
+                  aria-hidden
+                  className="pointer-events-none absolute left-0 right-0 top-0 h-[35%] opacity-0"
+                  style={{
+                    background: "linear-gradient(180deg, transparent 0%, rgba(245,158,11,0.50) 50%, transparent 100%)",
+                    boxShadow: "0 0 40px 10px rgba(245,158,11,0.45)",
+                  }}
+                />
+
+                {/* Wand burst */}
+                <div
+                  ref={burstRef}
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 m-auto rounded-full opacity-0"
+                  style={{
+                    width: "60%",
+                    height: "60%",
+                    background:
+                      "radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(245,158,11,0.4) 30%, transparent 60%)",
+                    filter: "blur(8px)",
+                  }}
+                />
+                <div
+                  ref={wandRef}
+                  className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0"
+                >
+                  <div
+                    className="size-[68px] rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(245,158,11,0.45)]"
+                    style={{
+                      background: "linear-gradient(135deg, #F59E0B 0%, #FF7B5C 50%, #B651D7 100%)",
+                    }}
+                  >
+                    <Wand2 size={30} className="text-white" strokeWidth={2.2} />
+                  </div>
+                </div>
+
+                {/* Status pill */}
+                <div className="absolute top-[10px] left-[10px]">
+                  {phase === "cgi" || phase === "scanning" ? (
+                    <span className="inline-flex items-center gap-[4px] px-[8px] py-[3px] rounded-full bg-[#7F6AF2] text-white text-[10px] font-bold uppercase tracking-[0.6px]">
+                      <Sparkles size={10} />
+                      CGI render
+                    </span>
+                  ) : phase === "matched" || phase === "transforming" ? (
+                    <span className="inline-flex items-center gap-[4px] px-[8px] py-[3px] rounded-full bg-[#F59E0B] text-white text-[10px] font-bold uppercase tracking-[0.6px]">
+                      <Layers size={10} />
+                      Matching parent
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-[4px] px-[8px] py-[3px] rounded-full bg-[#10B981] text-white text-[10px] font-bold uppercase tracking-[0.6px]">
+                      <Check size={10} strokeWidth={3} />
+                      Real photo
+                    </span>
+                  )}
+                </div>
+
+                {/* Vehicle caption */}
+                <div className="absolute bottom-[10px] left-[10px] right-[10px] flex items-end justify-between">
+                  <div className="bg-black/55 backdrop-blur-sm rounded-[8px] px-[10px] py-[5px]">
+                    <p className="text-[11px] font-bold text-white font-['Inter:Bold',sans-serif] leading-tight">
+                      2021 Skoda Kamiq SE
+                    </p>
+                    <p className="text-[9px] text-white/70 font-['Inter:Regular',sans-serif] leading-tight mt-[1px]">
+                      STK-3218 · was on a stock render
+                    </p>
+                  </div>
+                  <div className="bg-white/95 rounded-[6px] px-[6px] py-[2px]">
+                    <span className="text-[9px] font-bold uppercase tracking-[0.6px] text-[#F59E0B] font-['Inter:Bold',sans-serif]">
+                      {phase === "done" ? "After" : "Before"}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <p className="mt-[14px] text-[11px] text-black/45 text-center font-['Inter:Regular',sans-serif] leading-[16px]">
-            Vehicles without a matching donor stay on their current media until the next Spyne Studio capture.
-          </p>
+          {/* SVG layer: parent → hero connector line + flowing dash */}
+          <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%" style={{ overflow: "visible" }}>
+            <defs>
+              <linearGradient id="cgi-flow-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"  stopColor="#00C488" />
+                <stop offset="100%" stopColor="#F59E0B" />
+              </linearGradient>
+            </defs>
+            {path && (
+              <>
+                <path
+                  ref={lineRef}
+                  d={path}
+                  stroke="rgba(0,196,136,0.28)"
+                  strokeWidth={2}
+                  fill="none"
+                  strokeLinecap="round"
+                  style={{ opacity: 0 }}
+                />
+                <path
+                  ref={flowRef}
+                  d={path}
+                  stroke="url(#cgi-flow-grad)"
+                  strokeWidth={3}
+                  fill="none"
+                  strokeLinecap="round"
+                  style={{ opacity: 0, filter: "drop-shadow(0 0 4px rgba(245,158,11,0.5))" }}
+                />
+              </>
+            )}
+          </svg>
+
+          {/* Travelling orb (parent → hero) */}
+          <div
+            ref={orbRef}
+            className="absolute pointer-events-none top-0 left-0 size-[36px] rounded-full opacity-0"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(245,158,11,0.9) 40%, rgba(0,196,136,0.85) 100%)",
+              boxShadow: "0 0 16px 4px rgba(245,158,11,0.55)",
+            }}
+          />
         </div>
 
         {/* Footer */}
@@ -528,6 +530,7 @@ export function CGIUpgradeModal({ open, onClose, onNext, onBack, completed, tota
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

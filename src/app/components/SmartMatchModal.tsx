@@ -39,10 +39,31 @@ type Child = {
 };
 
 const INITIAL_CHILDREN: Child[] = [
-  { stk: "STK-2210", vin: "5TFMA5DB4RX040924", mmytcc: "Toyota Tundra 1794 · 2024 · White", exterior: 0, interior: 0, has360: false },
-  { stk: "STK-2212", vin: "5TFMA5DB4RX040931", mmytcc: "Toyota Tundra 1794 · 2024 · White", exterior: 0, interior: 0, has360: false },
-  { stk: "STK-2214", vin: "5TFMA5DB4RX040944", mmytcc: "Toyota Tundra 1794 · 2024 · White", exterior: 0, interior: 0, has360: false },
+  { stk: "STK-2210", vin: "TMBJF7NJ6LG502501", mmytcc: "Skoda Kamiq SE · 2020 · Silver", exterior: 0, interior: 0, has360: false },
+  { stk: "STK-2212", vin: "TMBJF7NJ6LG502604", mmytcc: "Skoda Kamiq SE · 2020 · Silver", exterior: 0, interior: 0, has360: false },
+  { stk: "STK-2214", vin: "TMBJF7NJ6LG502712", mmytcc: "Skoda Kamiq SE · 2020 · Silver", exterior: 0, interior: 0, has360: false },
 ];
+
+// Scrolling inventory list shown during the parent-discovery phase.
+// One entry is the spec match (Skoda Kamiq SE Silver) — the rest are distractors.
+type ScanEntry = { stk: string; vin: string; mmy: string; match: boolean };
+const SCAN_LIST: ScanEntry[] = [
+  { stk: "STK-1842", vin: "1FTFW1ET5DFA92341", mmy: "2022 Ford F-150 XLT · Blue",      match: false },
+  { stk: "STK-1893", vin: "JN8AT3BB2KW001211", mmy: "2019 Nissan Rogue SV · White",     match: false },
+  { stk: "STK-1907", vin: "1G1ZE5ST9HF184559", mmy: "2017 Chevrolet Malibu LT · Black", match: false },
+  { stk: "STK-1924", vin: "WBA8E9G54JNU48721", mmy: "2018 BMW 330i · Gray",             match: false },
+  { stk: "STK-1956", vin: "5YJ3E1EA6KF391201", mmy: "2019 Tesla Model 3 LR · White",    match: false },
+  { stk: "STK-1989", vin: "WAUFFAFL8DA055330", mmy: "2013 Audi A4 Premium · Silver",    match: false },
+  { stk: "STK-2014", vin: "JTDKARFU4F3050981", mmy: "2015 Toyota Prius Two · Red",      match: false },
+  { stk: "STK-2056", vin: "1HGCV1F35MA022119", mmy: "2021 Honda Accord Sport · White",  match: false },
+  { stk: "STK-2107", vin: "TMBJF7NJ6LG502118", mmy: "2020 Skoda Kamiq SE · Silver",     match: true  },
+  { stk: "STK-2153", vin: "WP0AA2A86JS115002", mmy: "2018 Porsche 911 Carrera · Black", match: false },
+  { stk: "STK-2188", vin: "1C4RJFBG2NC119988", mmy: "2022 Jeep Grand Cherokee · Green", match: false },
+  { stk: "STK-2204", vin: "WDDZF4JB7KA512388", mmy: "2019 Mercedes-Benz E-Class · Blue",match: false },
+  { stk: "STK-2239", vin: "5J6RW2H50KL000281", mmy: "2019 Honda CR-V EX-L · Silver",    match: false },
+  { stk: "STK-2271", vin: "KMHD84LF6KU821055", mmy: "2019 Hyundai Elantra GT · Red",    match: false },
+];
+const MATCH_LIST_INDEX = SCAN_LIST.findIndex(t => t.match);
 
 // ─── Child card ──────────────────────────────────────────────────────────────
 
@@ -157,6 +178,16 @@ export function SmartMatchModal({
   const [children, setChildren] = useState<Child[]>(() => INITIAL_CHILDREN.map(c => ({ ...c })));
   // Holds the resolved SVG d="..." strings for each parent→child path
   const [paths, setPaths] = useState<string[]>(["", "", ""]);
+  // Pre-flow phase: scan inventory for a spec match, THEN reveal parent + send media
+  type Phase = "scanning" | "matched";
+  const [phase, setPhase] = useState<Phase>("scanning");
+  // Refs for the scrolling-list scan animation
+  const scanListRef = useRef<HTMLDivElement>(null);
+  const scanViewportRef = useRef<HTMLDivElement>(null);
+  // Index of the row currently centered in the scan viewport (live, drives highlight)
+  const [scanCenter, setScanCenter] = useState(0);
+  // When true, the matched row is locked in and pulses
+  const [scanLocked, setScanLocked] = useState(false);
 
   // Smart Match collapses days-to-frontline down to ~1 day (publish-on-Day-0 pitch)
   const daysAfter = 1;
@@ -178,15 +209,56 @@ export function SmartMatchModal({
     );
   }, [open]);
 
-  // Reset state when opened
+  // Reset state when opened — start in scanning phase
   useEffect(() => {
     if (!open) return;
     setChildren(INITIAL_CHILDREN.map(c => ({ ...c })));
+    setPhase("scanning");
+    setScanCenter(0);
+    setScanLocked(false);
+    setPaths(["", "", ""]);
   }, [open]);
 
-  // Compute SVG paths from parent → each child centre, relative to stage
+  // GSAP-driven scrolling-list scan: fast scroll, decelerate, land on the match
   useEffect(() => {
-    if (!open) return;
+    if (!open || phase !== "scanning") return;
+    const list = scanListRef.current;
+    const viewport = scanViewportRef.current;
+    if (!list || !viewport) return;
+
+    const ROW_H = 40; // must match the CSS row height below
+    const viewH = viewport.clientHeight;
+    // Make sure the matched row lands centered in the viewport
+    const matchOffset = MATCH_LIST_INDEX * ROW_H - (viewH / 2 - ROW_H / 2);
+
+    // Start position: well above the match so we scroll DOWN past several distractors
+    gsap.set(list, { y: -matchOffset + ROW_H * 6 });
+    setScanLocked(false);
+
+    const obj = { y: -matchOffset + ROW_H * 6 };
+    const tween = gsap.to(obj, {
+      y: -matchOffset,
+      duration: 2.6,
+      ease: "power3.out",
+      onUpdate: () => {
+        gsap.set(list, { y: obj.y });
+        // Centre row = current y inverted, plus half the viewport
+        const center = (-obj.y + viewH / 2 - ROW_H / 2) / ROW_H;
+        setScanCenter(Math.round(center));
+      },
+      onComplete: () => {
+        setScanLocked(true);
+        // Brief lock-in pulse, then reveal the matched parent card
+        gsap.delayedCall(0.85, () => setPhase("matched"));
+      },
+    });
+    return () => { tween.kill(); };
+  }, [open, phase]);
+
+  // Compute SVG paths from parent → each child centre, relative to stage.
+  // Only computes once the parent has been revealed (phase === "matched").
+  useEffect(() => {
+    if (!open || phase !== "matched") return;
     const recompute = () => {
       const stage = stageRef.current;
       const parent = parentRef.current;
@@ -208,17 +280,23 @@ export function SmartMatchModal({
       });
       setPaths(newPaths);
     };
-    const id = requestAnimationFrame(recompute);
+    // Run rAF twice + a small fallback to make sure refs have laid out after
+    // the JSX swap from scanning-card → matched parent-card.
+    const id1 = requestAnimationFrame(recompute);
+    const id2 = requestAnimationFrame(() => requestAnimationFrame(recompute));
+    const t = window.setTimeout(recompute, 120);
     window.addEventListener("resize", recompute);
     return () => {
-      cancelAnimationFrame(id);
+      cancelAnimationFrame(id1);
+      cancelAnimationFrame(id2);
+      window.clearTimeout(t);
       window.removeEventListener("resize", recompute);
     };
-  }, [open]);
+  }, [open, phase]);
 
-  // Once paths exist, draw them with GSAP, then loop a flowing dash along each
+  // Once paths exist (post-match), draw them with GSAP, then loop a flowing dash
   useEffect(() => {
-    if (!open || paths.every(p => p === "")) return;
+    if (!open || phase !== "matched" || paths.every(p => p === "")) return;
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ delay: 0.5 });
 
@@ -248,12 +326,12 @@ export function SmartMatchModal({
       });
     });
     return () => ctx.revert();
-  }, [open, paths]);
+  }, [open, phase, paths]);
 
   // Animate orbs travelling along the paths (one per lane), repeatedly,
   // and credit each child as the orb lands
   useEffect(() => {
-    if (!open || paths.every(p => p === "")) return;
+    if (!open || phase !== "matched" || paths.every(p => p === "")) return;
 
     // Build the per-child delivery schedule: 9 ext → 18 int → 1 video = 28 each
     const schedule: { lane: number; kind: "exterior" | "interior" | "video" }[] = [];
@@ -309,7 +387,7 @@ export function SmartMatchModal({
       });
     });
     return () => ctx.revert();
-  }, [open, paths]);
+  }, [open, phase, paths]);
 
   // Progress bar
   const matchedSum = children.reduce((s, c) => s + c.exterior + c.interior + (c.has360 ? 1 : 0), 0);
@@ -366,7 +444,7 @@ export function SmartMatchModal({
                   )}
                 </div>
                 <p className="mt-[4px] text-[13px] text-black/55 font-['Inter:Regular',sans-serif]">
-                  One donor sends its full media set to every matching vehicle.
+                  We find a parent vehicle in your inventory and replicate its media.
                 </p>
               </div>
             </div>
@@ -436,34 +514,121 @@ export function SmartMatchModal({
           className="relative flex-1 px-[24px] py-[16px] bg-[#FAFAFB] overflow-hidden"
         >
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] gap-[40px] h-full items-center">
-            {/* Donor parent */}
+            {/* Parent vehicle — scanning state OR revealed once a match lands */}
             <div ref={parentRef} className="relative">
               <p className="text-[9px] uppercase tracking-[0.8px] font-bold text-black/55 mb-[6px] font-['Inter:Bold',sans-serif]">
-                Donor vehicle
+                {phase === "scanning" ? "Scanning inventory for spec match…" : "Parent vehicle · match found"}
               </p>
-              <div className="relative rounded-[14px] overflow-hidden border-[2px] border-[#00C488] shadow-[0_8px_24px_rgba(0,196,136,0.18)] aspect-[16/11]">
-                <img src={studioExt1} alt="Donor" className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute top-[8px] left-[8px]">
-                  <span className="inline-flex items-center gap-[4px] px-[7px] py-[2px] rounded-full bg-[#00C488] text-white text-[9px] font-bold uppercase tracking-[0.5px]">
-                    <Check size={9} strokeWidth={3} />
-                    Donor
-                  </span>
+
+              {phase === "scanning" ? (
+                <div className="relative rounded-[14px] overflow-hidden border border-black/10 bg-white aspect-[16/11] flex flex-col">
+                  {/* Status header */}
+                  <div className="flex items-center justify-between px-[10px] py-[7px] border-b border-black/8 bg-[#FAFAFB]">
+                    <div className="inline-flex items-center gap-[6px]">
+                      <span className="size-[6px] rounded-full bg-[#4600F2] animate-pulse" />
+                      <p className="text-[10px] font-bold text-[#4600F2] uppercase tracking-[0.6px] font-['Inter:Bold',sans-serif]">
+                        {scanLocked ? "Match found" : "Scanning inventory"}
+                      </p>
+                    </div>
+                    <p className="text-[10px] text-black/45 font-['Inter:Medium',sans-serif] font-medium tabular-nums">
+                      {SCAN_LIST.length} VINs
+                    </p>
+                  </div>
+
+                  {/* Scrolling list viewport */}
+                  <div ref={scanViewportRef} className="relative flex-1 overflow-hidden">
+                    {/* Top + bottom fade masks */}
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-[28px] bg-gradient-to-b from-white to-transparent z-10" />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[28px] bg-gradient-to-t from-white to-transparent z-10" />
+
+                    {/* Centre-row highlight band (where the match will land) */}
+                    <div
+                      className={`pointer-events-none absolute left-[6px] right-[6px] top-1/2 -translate-y-1/2 h-[36px] rounded-[8px] border transition-all duration-200 z-[5] ${
+                        scanLocked
+                          ? "border-[#00C488] bg-[rgba(0,196,136,0.08)] shadow-[0_0_0_4px_rgba(0,196,136,0.15)]"
+                          : "border-[#4600F2]/40 bg-[rgba(70,0,242,0.04)]"
+                      }`}
+                    />
+
+                    {/* Scrolling list — GSAP translates this on the y-axis */}
+                    <div ref={scanListRef} className="absolute left-0 right-0 top-0 will-change-transform">
+                      {SCAN_LIST.map((row, i) => {
+                        const isCentre = i === scanCenter;
+                        const isMatch = row.match && scanLocked && isCentre;
+                        return (
+                          <div
+                            key={row.stk}
+                            className="h-[40px] flex items-center px-[12px] gap-[10px]"
+                          >
+                            <span className={`text-[10px] font-bold tabular-nums uppercase tracking-[0.4px] ${
+                              isMatch ? "text-[#00C488]" : isCentre ? "text-[#4600F2]" : "text-black/35"
+                            }`}>
+                              {row.stk}
+                            </span>
+                            <span className={`text-[10px] font-mono tabular-nums truncate ${
+                              isMatch ? "text-[#0a0a0a] font-semibold" : isCentre ? "text-[#0a0a0a]" : "text-black/40"
+                            }`}>
+                              {row.vin}
+                            </span>
+                            <span className={`flex-1 text-[11px] truncate ${
+                              isMatch
+                                ? "text-[#0a0a0a] font-bold font-['Inter:Bold',sans-serif]"
+                                : isCentre
+                                  ? "text-[#0a0a0a] font-semibold font-['Inter:Semi_Bold',sans-serif]"
+                                  : "text-black/45 font-medium font-['Inter:Medium',sans-serif]"
+                            }`}>
+                              {row.mmy}
+                            </span>
+                            {isMatch ? (
+                              <span className="inline-flex items-center justify-center size-[18px] rounded-full bg-[#00C488] shrink-0">
+                                <Check size={10} className="text-white" strokeWidth={3.5} />
+                              </span>
+                            ) : (
+                              <span className="size-[18px] shrink-0" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Status footer */}
+                  <div className="px-[10px] py-[7px] border-t border-black/8 bg-[#FAFAFB]">
+                    <p className="text-[10px] text-black/65 font-['Inter:Medium',sans-serif] font-medium truncate">
+                      {scanLocked
+                        ? <><span className="text-[#00C488] font-bold">Spec match:</span> {SCAN_LIST[MATCH_LIST_INDEX].mmy}</>
+                        : <>Checking <span className="text-[#0a0a0a] font-semibold">{SCAN_LIST[Math.max(0, Math.min(scanCenter, SCAN_LIST.length - 1))]?.mmy ?? ""}</span></>}
+                    </p>
+                  </div>
                 </div>
-                <div className="absolute bottom-[8px] left-[8px] right-[8px] bg-black/55 backdrop-blur-sm rounded-[6px] px-[8px] py-[5px]">
-                  <p className="text-[10px] font-bold text-white font-['Inter:Bold',sans-serif] leading-tight">
-                    2024 Toyota Tundra 1794
-                  </p>
-                  <p className="text-[8px] text-white/70 leading-tight mt-[1px]">
-                    STK-2107 · full media set
-                  </p>
+              ) : (
+                <div className="relative rounded-[14px] overflow-hidden border-[2px] border-[#00C488] shadow-[0_8px_24px_rgba(0,196,136,0.18)] aspect-[16/11]">
+                  <img src={studioExt1} alt="Parent" className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute top-[8px] left-[8px]">
+                    <span className="inline-flex items-center gap-[4px] px-[7px] py-[2px] rounded-full bg-[#00C488] text-white text-[9px] font-bold uppercase tracking-[0.5px]">
+                      <Check size={9} strokeWidth={3} />
+                      Parent
+                    </span>
+                  </div>
+                  <div className="absolute bottom-[8px] left-[8px] right-[8px] bg-black/55 backdrop-blur-sm rounded-[6px] px-[8px] py-[5px]">
+                    <p className="text-[10px] font-bold text-white font-['Inter:Bold',sans-serif] leading-tight">
+                      2020 Skoda Kamiq SE
+                    </p>
+                    <p className="text-[8px] text-white/70 leading-tight mt-[1px]">
+                      STK-2107 · full media set
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
+
               <p className="mt-[8px] text-[10px] text-black/55 font-['Inter:Regular',sans-serif] leading-tight">
-                Sending its full media set to every spec-match.
+                {phase === "scanning"
+                  ? "Looking across your inventory for a same-spec match."
+                  : "Sending its full media set to every spec-match."}
               </p>
             </div>
 
-            {/* Children stack */}
+            {/* Children stack — always visible. Photos only flow in after parent match. */}
             <div className="flex flex-col gap-[10px]">
               {children.map((c, i) => (
                 <ChildCard

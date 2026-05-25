@@ -38,11 +38,11 @@ type Slide = {
 
 const SLIDES: Slide[] = [
   { kind: "video", studio: spin360Mov,        input: null,            label: "360° Tour" },
-  { kind: "image", studio: studioExteriorImg, input: rawExteriorImg,  label: "Front 3/4" },
-  { kind: "image", studio: studioExteriorImg2,input: rawExteriorImg2, label: "Side" },
+  { kind: "image", studio: studioExteriorImg, input: rawExteriorImg,  label: "Front" },
+  { kind: "image", studio: studioExteriorImg2,input: rawExteriorImg2, label: "Driver side" },
   { kind: "image", studio: studioExteriorImg3,input: rawExteriorImg3, label: "Rear 3/4" },
-  { kind: "image", studio: studioInteriorImg, input: rawInteriorImg,  label: "Interior front" },
-  { kind: "image", studio: studioInteriorImg2,input: rawInteriorImg2, label: "Interior rear" },
+  { kind: "image", studio: studioInteriorImg, input: rawInteriorImg,  label: "Rear" },
+  { kind: "image", studio: studioInteriorImg2,input: rawInteriorImg2, label: "Rear 3/4 alt" },
 ];
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
@@ -450,10 +450,10 @@ export function RawPhotoTransformModal({
             <div className="absolute bottom-[10px] left-[10px] right-[10px] flex items-end justify-between">
               <div className="bg-black/55 backdrop-blur-sm rounded-[8px] px-[10px] py-[5px]">
                 <p className="text-[11px] font-bold text-white font-['Inter:Bold',sans-serif] leading-tight">
-                  2024 Toyota Tundra 1794
+                  2020 Skoda Kamiq SE
                 </p>
                 <p className="text-[9px] text-white/70 font-['Inter:Regular',sans-serif] leading-tight mt-[1px]">
-                  STK-2107 · VIN 5TFMA5DB4RX040918
+                  STK-2107 · VIN TMBJF7NJ6LG502118
                 </p>
               </div>
               <div className="bg-white/95 rounded-[6px] px-[6px] py-[2px]">
