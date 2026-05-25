@@ -6,14 +6,16 @@ import { LoadingScreen } from "./components/LoadingScreen";
 import { ScanningScreen } from "./components/ScanningScreen";
 import { DashboardScreen } from "./components/DashboardScreen";
 import { MarketingScreen } from "./components/MarketingScreen";
+import { VehicleDetailScreen, type VehicleForVDP } from "./components/VehicleDetailScreen";
 
-type Screen = "import" | "loading" | "synced" | "scanning" | "dashboard" | "marketing";
+type Screen = "import" | "loading" | "synced" | "scanning" | "dashboard" | "marketing" | "vdp";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("import");
   const [imsName, setImsName] = useState<string>("Vincue");
   const [benchmarksOpen, setBenchmarksOpen] = useState(false);
   const [benchmarks, setBenchmarks] = useState<Benchmarks>(DEFAULT_BENCHMARKS);
+  const [vdpVehicle, setVdpVehicle] = useState<VehicleForVDP | null>(null);
 
   // After IMS pick: capture benchmarks before starting the import animation
   const handleImport = useCallback((name: string) => {
@@ -47,6 +49,23 @@ export default function App() {
     else if (label === "Studio AI" || label === "Inventory") setScreen("dashboard");
   };
 
+  const openVdp = (v: VehicleForVDP) => {
+    setVdpVehicle(v);
+    setScreen("vdp");
+  };
+
+  if (screen === "vdp" && vdpVehicle) {
+    return (
+      <div className="size-full overflow-auto">
+        <VehicleDetailScreen
+          vehicle={vdpVehicle}
+          onBack={() => setScreen("dashboard")}
+          onNavigate={handleNav}
+        />
+      </div>
+    );
+  }
+
   if (screen === "marketing") {
     return (
       <div className="size-full overflow-auto">
@@ -58,7 +77,7 @@ export default function App() {
   if (screen === "dashboard") {
     return (
       <div className="size-full overflow-auto">
-        <DashboardScreen benchmarks={benchmarks} onNavigate={handleNav} />
+        <DashboardScreen benchmarks={benchmarks} onNavigate={handleNav} onRowClick={openVdp} />
       </div>
     );
   }

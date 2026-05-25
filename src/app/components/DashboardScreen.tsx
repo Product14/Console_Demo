@@ -359,20 +359,22 @@ const rows: Row[] = [
 ];
 
 function VehicleRow({
-  row, published, selected, onToggle, spotlit,
+  row, published, selected, onToggle, spotlit, onOpen,
 }: {
   row: Row;
   published: PublishedTo[];
   selected: boolean;
   onToggle: () => void;
   spotlit?: boolean;
+  onOpen?: () => void;
 }) {
   const ageClass = row.isLoss
     ? "text-[#EF4444]"
     : "text-[#374151]";
   return (
     <tr
-      className={`border-b border-black/5 transition-colors ${
+      onClick={onOpen}
+      className={`border-b border-black/5 transition-colors cursor-pointer ${
         spotlit
           ? "siri-row-glow bg-[rgba(127,106,242,0.06)]"
           : selected
@@ -380,7 +382,7 @@ function VehicleRow({
             : row.isLoss ? "bg-[#FEF2F2]/40 hover:bg-[#FEF2F2]" : "hover:bg-[#FAFAFB]"
       }`}
     >
-      <td className="pl-4 pr-2 py-3 w-10">
+      <td className="pl-4 pr-2 py-3 w-10" onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
           checked={selected}
@@ -508,11 +510,13 @@ const SUMMARY_TOTAL_FIXED = 67 + 70 + 96; // raw + smartMatch + cgi
 interface DashboardScreenProps {
   benchmarks?: { daysToFrontline: number; holdingCostPerDay: number };
   onNavigate?: (label: string) => void;
+  onRowClick?: (vehicle: { id: number; name: string; stk: string; vin: string; trim?: string; smartMatch?: boolean }) => void;
 }
 
 export function DashboardScreen({
   benchmarks = { daysToFrontline: 50, holdingCostPerDay: 40 },
   onNavigate,
+  onRowClick,
 }: DashboardScreenProps = {}) {
   // Derived demo numbers, calibrated from the dealer's inputs
   // Smart Match collapses frontline cycle to ~1 day; publishing keeps it there.
@@ -776,6 +780,13 @@ export function DashboardScreen({
                         selected={selectedIds.has(r.id)}
                         onToggle={() => toggleRow(r.id)}
                         spotlit={smartMatchSpotlight && r.id === firstSmartMatchId}
+                        onOpen={() => onRowClick?.({
+                          id: r.id,
+                          name: r.name,
+                          stk: r.stk,
+                          vin: r.vin,
+                          smartMatch: r.smartMatch,
+                        })}
                       />
                     ));
                   })()}
