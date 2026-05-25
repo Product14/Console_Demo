@@ -2,14 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import {
   X, Sparkles, Wand2, Layers, TrendingUp,
-  Clock, DollarSign, Check, ArrowRight, ChevronUp, Megaphone,
+  Clock, DollarSign, Check, ArrowRight, ChevronUp,
 } from "lucide-react";
 import { ScoreGauge } from "./ScoreGauge";
 
 interface Summary {
   rawTransformed: number;
+  rawTotal: number;
   smartMatched: number;
+  noPhotoTotal: number;
   cgiUpgraded: number;
+  cgiTotal: number;
+  totalInventory: number;
   scoreBefore: number;
   scoreAfter: number;
   daysSaved: number;       // per VIN avg
@@ -18,8 +22,12 @@ interface Summary {
 
 const DEFAULT_SUMMARY: Summary = {
   rawTransformed: 67,
-  smartMatched: 70,        // eligible new-vehicles with donor (78% of 90)
-  cgiUpgraded: 96,         // eligible new-vehicles with donor (72% of 134)
+  rawTotal: 67,
+  smartMatched: 70,
+  noPhotoTotal: 90,
+  cgiUpgraded: 96,
+  cgiTotal: 134,
+  totalInventory: 234,
   scoreBefore: 2.8,
   scoreAfter: 7.9,
   daysSaved: 4.1,
@@ -86,12 +94,15 @@ function ScoreLift({ before, after, open }: { before: number; after: number; ope
 // ─── Impact stat card ─────────────────────────────────────────────────────────
 
 function ImpactStat({
-  label, value, accent, icon, suffix, decimals = 0, open,
+  label, value, accent, icon, prefix, suffix, decimals = 0, denominator, open,
 }: {
   label: string; value: number; accent: string; icon: React.ReactNode;
-  suffix?: string; decimals?: number; open: boolean;
+  prefix?: string; suffix?: string; decimals?: number; denominator?: number; open: boolean;
 }) {
   const live = useCountUp(value, open, decimals);
+  const formatted = decimals === 0
+    ? live.toLocaleString("en-US")
+    : live.toFixed(decimals);
   return (
     <div className="flex-1 rounded-[14px] border border-black/8 bg-white px-[16px] py-[14px]">
       <div className="flex items-center gap-[10px]">
@@ -106,7 +117,11 @@ function ImpactStat({
         </p>
       </div>
       <p className="mt-[10px] text-[26px] font-bold text-[#0a0a0a] font-['Inter:Bold',sans-serif] leading-none">
-        {decimals === 0 ? live.toLocaleString() : live.toFixed(decimals)}
+        {prefix && <span>{prefix}</span>}
+        {formatted}
+        {typeof denominator === "number" && (
+          <span className="text-[14px] text-black/35 font-semibold ml-[4px]">/ {denominator.toLocaleString("en-US")}</span>
+        )}
         {suffix && <span className="text-[13px] text-black/45 font-medium ml-[4px]">{suffix}</span>}
       </p>
     </div>
@@ -116,10 +131,9 @@ function ImpactStat({
 // ─── Action recap card ────────────────────────────────────────────────────────
 
 function ActionRecap({
-  icon, color, eyebrow, title, count, descriptor,
+  icon, color, label, count, total,
 }: {
-  icon: React.ReactNode; color: string; eyebrow: string; title: string;
-  count: number; descriptor: string;
+  icon: React.ReactNode; color: string; label: string; count: number; total: number;
 }) {
   return (
     <div className="flex-1 rounded-[12px] border border-black/8 bg-white p-[14px] relative overflow-hidden">
@@ -136,20 +150,17 @@ function ActionRecap({
           {icon}
         </div>
         <p
-          className="text-[9px] uppercase tracking-[0.8px] font-bold font-['Inter:Bold',sans-serif]"
+          className="text-[10px] uppercase tracking-[0.8px] font-bold font-['Inter:Bold',sans-serif]"
           style={{ color }}
         >
-          {eyebrow}
+          {label}
         </p>
       </div>
-      <p className="mt-[10px] text-[13px] font-semibold text-[#0a0a0a] font-['Inter:Semi_Bold',sans-serif] leading-[18px]">
-        {title}
-      </p>
-      <div className="mt-[8px] flex items-baseline gap-[6px]">
-        <span className="text-[22px] font-bold font-['Inter:Bold',sans-serif]" style={{ color }}>
+      <div className="mt-[12px] flex items-baseline gap-[4px]">
+        <span className="text-[26px] font-bold font-['Inter:Bold',sans-serif]" style={{ color }}>
           {count}
         </span>
-        <span className="text-[11px] text-black/55 font-medium">{descriptor}</span>
+        <span className="text-[14px] text-black/35 font-semibold">/ {total}</span>
       </div>
     </div>
   );
@@ -258,15 +269,15 @@ export function TransformationSummaryModal({
               open={open}
               label="Holding cost saved"
               value={holdingSaved}
-              suffix=""
+              prefix="$"
               accent="#10B981"
               icon={<DollarSign size={16} />}
             />
             <ImpactStat
               open={open}
               label="Vehicles studio-ready"
-              value={totalFixed}
-              suffix=""
+              value={Math.min(totalFixed, summary.totalInventory)}
+              denominator={summary.totalInventory}
               accent="#F59E0B"
               icon={<Wand2 size={16} />}
             />
@@ -280,56 +291,26 @@ export function TransformationSummaryModal({
             <ActionRecap
               icon={<Wand2 size={14} />}
               color="#4600F2"
-              eyebrow="Raw photos"
-              title="Lot photos transformed with studio background"
+              label="Raw photos"
               count={summary.rawTransformed}
-              descriptor="VINs"
+              total={summary.rawTotal}
             />
             <ActionRecap
               icon={<Layers size={14} />}
               color="#00C488"
-              eyebrow="Smart Match"
-              title="No-photo VINs got media from spec-matched units"
+              label="No photos"
               count={summary.smartMatched}
-              descriptor="VINs"
+              total={summary.noPhotoTotal}
             />
             <ActionRecap
               icon={<TrendingUp size={14} />}
               color="#F59E0B"
-              eyebrow="CGI upgrade"
-              title="Stock renders swapped for real dealership photos"
+              label="CGI photos"
               count={summary.cgiUpgraded}
-              descriptor="VINs"
+              total={summary.cgiTotal}
             />
           </div>
 
-          {/* Ready to publish band */}
-          <div
-            className="mt-[20px] rounded-[14px] p-[16px] flex items-center gap-[14px] relative overflow-hidden"
-            style={{
-              background:
-                "linear-gradient(95deg, rgba(70,0,242,0.06) 0%, rgba(182,81,215,0.06) 50%, rgba(255,92,122,0.06) 100%)",
-              border: "1px solid rgba(70,0,242,0.12)",
-            }}
-          >
-            <div
-              className="shrink-0 size-[40px] rounded-[10px] flex items-center justify-center"
-              style={{
-                background: "linear-gradient(135deg, #FF5C7A 0%, #4600F2 100%)",
-                color: "#fff",
-              }}
-            >
-              <Megaphone size={20} />
-            </div>
-            <div className="flex-1">
-              <p className="text-[14px] font-semibold text-[#0a0a0a] font-['Inter:Semi_Bold',sans-serif]">
-                Ready to publish
-              </p>
-              <p className="text-[12px] text-black/55 mt-[2px] font-['Inter:Regular',sans-serif]">
-                Push to all your channels in one click.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}

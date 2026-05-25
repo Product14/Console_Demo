@@ -7,6 +7,8 @@ import { InventorySnapshotModal } from "./InventorySnapshotModal";
 import { RawPhotoTransformModal } from "./RawPhotoTransformModal";
 import { SmartMatchModal } from "./SmartMatchModal";
 import { CGIUpgradeModal } from "./CGIUpgradeModal";
+import { MerchandisingPitchModal } from "./MerchandisingPitchModal";
+import { SmartMatchPitchModal } from "./SmartMatchPitchModal";
 
 // ─── Scanning status ─────────────────────────────────────────────────────────
 
@@ -219,7 +221,15 @@ export function ScanningScreen({
   const [vehicles, setVehicles] = useState<Vehicle[]>(() =>
     vehiclePool.slice(0, VISIBLE_ROWS).map((v, i) => ({ ...v, id: i + 1 }))
   );
-  type Stage = "scanning" | "snapshot" | "rawTransform" | "smartMatch" | "cgiUpgrade" | "done";
+  type Stage =
+    | "scanning"
+    | "snapshot"
+    | "merchandisingPitch"
+    | "rawTransform"
+    | "smartMatchPitch"
+    | "smartMatch"
+    | "cgiUpgrade"
+    | "done";
   const [stage, setStage] = useState<Stage>("scanning");
 
   // After 8s of scanning, surface the inventory snapshot modal
@@ -393,14 +403,26 @@ export function ScanningScreen({
         noPhotos={90}
         rawPhotos={67}
         cgiPhotos={134}
-        onStart={() => setStage("rawTransform")}
+        onStart={() => setStage("merchandisingPitch")}
+      />
+
+      <MerchandisingPitchModal
+        open={stage === "merchandisingPitch"}
+        onClose={() => setStage("done")}
+        onContinue={() => setStage("rawTransform")}
       />
 
       <RawPhotoTransformModal
         open={stage === "rawTransform"}
         totalRaw={67}
         onClose={() => setStage("done")}
-        onNext={() => setStage("smartMatch")}
+        onNext={() => setStage("smartMatchPitch")}
+      />
+
+      <SmartMatchPitchModal
+        open={stage === "smartMatchPitch"}
+        onClose={() => setStage("done")}
+        onContinue={() => setStage("smartMatch")}
       />
 
       <SmartMatchModal

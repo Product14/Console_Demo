@@ -7,6 +7,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onNext?: () => void;
+  onBack?: () => void;
+  completed?: boolean;
   totalRaw?: number;
 }
 
@@ -203,7 +205,7 @@ function TransformCard({ card, index }: { card: Card; index: number }) {
 
 // ─── Modal shell ─────────────────────────────────────────────────────────────
 
-export function RawPhotoTransformModal({ open, onClose, onNext, totalRaw = 67 }: Props) {
+export function RawPhotoTransformModal({ open, onClose, onNext, onBack, completed, totalRaw = 67 }: Props) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);

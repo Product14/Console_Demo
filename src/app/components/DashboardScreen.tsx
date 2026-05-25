@@ -18,6 +18,7 @@ import { PublishingCell } from "./PublishingCell";
 import { SelectionActionBar } from "./SelectionActionBar";
 import { SmartCampaignModal } from "./SmartCampaignModal";
 import { SmartMatchSpotlight } from "./SmartMatchSpotlight";
+import { NeedActionsWidget, NeedActionsButton } from "./NeedActionsWidget";
 import type { PublishedTo } from "./publishPlatforms";
 
 // ─── Atomic pieces ────────────────────────────────────────────────────────────
@@ -567,6 +568,9 @@ export function DashboardScreen({
   // Smart Campaign modal — opens from the action bar CTA
   const [campaignOpen, setCampaignOpen] = useState(false);
 
+  // Need Actions widget — toggled by the red floating button
+  const [needActionsOpen, setNeedActionsOpen] = useState(false);
+
   // One-time Smart Match spotlight — surfaces after the summary modal closes
   const [smartMatchSpotlight, setSmartMatchSpotlight] = useState(false);
   const [smartMatchSeen, setSmartMatchSeen] = useState(false);
@@ -779,23 +783,12 @@ export function DashboardScreen({
             </div>
           </div>
 
-          {/* Floating "Need actions" pill (bottom-right, red) */}
-          <div className="fixed bottom-[24px] right-[24px] z-30">
-            <button
-              className="h-[42px] pl-[16px] pr-[10px] rounded-full text-white text-[13px] font-semibold font-['Inter:Semi_Bold',sans-serif] inline-flex items-center gap-[10px] shadow-[0_8px_20px_rgba(220,38,38,0.45)] hover:shadow-[0_12px_28px_rgba(220,38,38,0.55)] transition-shadow"
-              style={{
-                background: "linear-gradient(90deg, #DC2626 0%, #EF4444 100%)",
-              }}
-            >
-              <AlertCircle size={15} strokeWidth={2.5} />
-              Need actions
-              <span className="flex items-center -space-x-[6px]">
-                <span className="size-[22px] rounded-full bg-white text-[#DC2626] flex items-center justify-center ring-2 ring-[#DC2626]/30 text-[10px] font-bold">
-                  4
-                </span>
-              </span>
-            </button>
-          </div>
+          {/* Floating "Need actions" pill (bottom-right, red) — hidden while widget is open */}
+          {!needActionsOpen && (
+            <div className="fixed bottom-[24px] right-[24px] z-30">
+              <NeedActionsButton count={12} onClick={() => setNeedActionsOpen(true)} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -818,6 +811,25 @@ export function DashboardScreen({
         onDismiss={() => { setSmartMatchSpotlight(false); setSmartMatchSeen(true); }}
       />
 
+      {/* Need Actions widget — toggled by the red floating button */}
+      <NeedActionsWidget
+        open={needActionsOpen}
+        count={12}
+        noPhotos={4}
+        noHeroAngle={8}
+        onMinimize={() => setNeedActionsOpen(false)}
+        onIssueClick={() => {
+          // Surface aged inventory in the table
+          setNeedActionsOpen(false);
+          setAgeFilter("gt40");
+        }}
+        onRunCampaign={() => {
+          // Drives the existing >60-day flow: filters table, selects rows, opens action bar
+          setNeedActionsOpen(false);
+          setAgeFilter("gt60");
+        }}
+      />
+
       {/* Transformation summary — auto-opens on dashboard load; X minimizes to widget */}
       <TransformationSummaryModal
         open={summaryOpen}
@@ -825,8 +837,12 @@ export function DashboardScreen({
         onPublish={() => { setSummaryOpen(false); setPubPhase("select"); }}
         summary={{
           rawTransformed: 67,
+          rawTotal: 67,
           smartMatched: 70,
+          noPhotoTotal: 90,
           cgiUpgraded: 96,
+          cgiTotal: 134,
+          totalInventory: 234,
           scoreBefore: 2.8,
           scoreAfter: 7.9,
           daysSaved: daysSavedTransform,
