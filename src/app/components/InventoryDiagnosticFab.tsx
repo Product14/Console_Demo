@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import {
-  Camera, ImageOff, Send, TrendingDown,
+  Camera, ImageOff, Send, TrendingDown, Wand2,
   ArrowRight, Minus, Check, AlertCircle,
 } from "lucide-react";
 import type { BucketKey, BucketState } from "./Demo2Dashboard";
@@ -13,6 +13,7 @@ const BUCKET_DEFS: Array<{
 }> = [
   { key: "raw",          label: "Raw media awaiting processing", icon: <Camera size={14} strokeWidth={2.2} /> },
   { key: "nophoto",      label: "No photos",                     icon: <ImageOff size={14} strokeWidth={2.2} /> },
+  { key: "cgi",          label: "Standard photos awaiting CGI",  icon: <Wand2 size={14} strokeWidth={2.2} /> },
   { key: "unsyndicated", label: "Not syndicated",                icon: <Send size={14} strokeWidth={2.2} /> },
   { key: "aging",        label: "Aging, high holding cost",      icon: <TrendingDown size={14} strokeWidth={2.2} /> },
 ];
@@ -21,6 +22,9 @@ export interface InventoryDiagnosticFabProps {
   buckets: Record<BucketKey, BucketState>;
   activeBucket: BucketKey | null;
   onBucketClick: (b: BucketKey) => void;
+  /** When provided, the parent owns the expanded/collapsed state. */
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
 }
 
 /**
@@ -32,9 +36,14 @@ export interface InventoryDiagnosticFabProps {
  * is what actually fires the transformation animation — see Demo2.tsx).
  */
 export function InventoryDiagnosticFab({
-  buckets, activeBucket, onBucketClick,
+  buckets, activeBucket, onBucketClick, expanded: expandedProp, onExpandedChange,
 }: InventoryDiagnosticFabProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [internalExpanded, setInternalExpanded] = useState(true);
+  const expanded = expandedProp ?? internalExpanded;
+  const setExpanded = (v: boolean) => {
+    if (onExpandedChange) onExpandedChange(v);
+    if (expandedProp === undefined) setInternalExpanded(v);
+  };
   const widgetRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 

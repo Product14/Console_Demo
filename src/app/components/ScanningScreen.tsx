@@ -252,7 +252,7 @@ export function ScanningScreen({
 
   // After 8s of scanning, surface the inventory snapshot modal
   useEffect(() => {
-    const t = setTimeout(() => setStage("snapshot"), 8000);
+    const t = setTimeout(() => setStage("snapshot"), 3500);
     return () => clearTimeout(t);
   }, []);
 

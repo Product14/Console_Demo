@@ -1,16 +1,17 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import {
   Plus, Sparkles, ChevronDown, Filter, Download, Eye, CircleDot, Info,
+  Camera, ImageOff, Wand2, Send, TrendingDown,
 } from "lucide-react";
 import { AppHeader, AppSidebar } from "./AppShell";
 import { VehicleRow, ColHeader, type Row } from "./shared/VehicleRow";
-import { FilterChip } from "./shared/FilterChip";
 import { MiniBars } from "./shared/KpiCards";
 import { KpiCounter } from "./shared/KpiCounter";
+import { KpiDelta } from "./shared/KpiDelta";
 import { ScoreGauge } from "./ScoreGauge";
 
-export type BucketKey = "raw" | "nophoto" | "unsyndicated" | "aging";
+export type BucketKey = "raw" | "nophoto" | "cgi" | "unsyndicated" | "aging";
 
 export interface BucketState {
   count: number;
@@ -21,6 +22,12 @@ export interface BucketState {
 export interface Demo2DashboardProps {
   dtf: number;
   score: number;
+  /** Cumulative holding-cost dollars saved across resolved buckets. */
+  saved: number;
+  /** Persistent delta versus the previous resolved bucket (post-transformation) */
+  dtfUplift: number;   // positive when DTF dropped
+  scoreUplift: number; // positive when score rose
+  savedUplift: number; // positive when more money was saved this step
   buckets: Record<BucketKey, BucketState>;
   activeBucket: BucketKey | null;
   onBucketClick: (b: BucketKey) => void;
@@ -30,13 +37,19 @@ export interface Demo2DashboardProps {
   highlightIds: Set<number>;
   /** IDs of rows currently animating through a transformation (shimmer overlay). */
   transformingIds: Set<number>;
+  /** Currently-selected vehicle IDs (drives the SelectionActionBar count). */
+  selectedIds: Set<number>;
+  onToggleSelect: (id: number) => void;
   onNavigate?: (label: string) => void;
 }
 
-function Tab({ label, count, active }: { label: string; count?: number; active?: boolean }) {
+function Tab({ label, count, active, onClick }: {
+  label: string; count?: number; active?: boolean; onClick?: () => void;
+}) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className={`relative pb-[10px] pt-[2px] text-[13px] font-['Inter:Semi_Bold',sans-serif] transition-colors ${
         active ? "text-[#4600F2] font-semibold" : "text-black/55 hover:text-[#0a0a0a] font-medium"
       }`}
@@ -60,14 +73,35 @@ function Tab({ label, count, active }: { label: string; count?: number; active?:
   );
 }
 
-function shortBucketLabel(b: BucketKey): string {
-  switch (b) {
-    case "raw":          return "Raw media";
-    case "nophoto":      return "No photos";
-    case "unsyndicated": return "Not syndicated";
-    case "aging":        return "Aging";
-  }
+export type VehicleTypeTab = "all" | "new" | "preowned";
+
+/** Small green "+1.1" / "−2d" / "+$8,600" indicator shown next to a KPI's
+ *  current value to make the latest-step uplift unmistakable. */
+function UpliftBadge({ text }: { text: string }) {
+  return (
+    <span
+      className="ml-[6px] inline-flex items-center gap-[3px] px-[7px] py-[2px] rounded-full text-[10px] font-bold uppercase tracking-[0.4px] font-['Inter:Bold',sans-serif] text-[#047857] bg-[rgba(16,185,129,0.14)]"
+      title="Uplift since the previous step"
+    >
+      ↑ {text}
+    </span>
+  );
 }
+
+interface FilterCardDef {
+  key: BucketKey;
+  label: string;
+  icon: React.ReactNode;
+  color: string;
+}
+
+const FILTER_CARDS: FilterCardDef[] = [
+  { key: "nophoto",      label: "No Photos",      icon: <ImageOff size={20} strokeWidth={2} />,       color: "#EF4444" },
+  { key: "raw",          label: "Raw Photos",     icon: <Camera size={20} strokeWidth={2} />,         color: "#F59E0B" },
+  { key: "cgi",          label: "CGI Photos",     icon: <Wand2 size={20} strokeWidth={2} />,          color: "#7C3AED" },
+  { key: "unsyndicated", label: "Not Syndicated", icon: <Send size={20} strokeWidth={2} />,           color: "#4600F2" },
+  { key: "aging",        label: "Aging Units",    icon: <TrendingDown size={20} strokeWidth={2} />,   color: "#DC2626" },
+];
 
 // Verbal status descriptors so the AE can read the KPI at a glance instead of
 // translating raw numbers. Thresholds match the ScoreGauge's banded gradient
@@ -95,11 +129,25 @@ function barsFor(value: number, max: number, higherBetter = false): number[] {
 }
 
 export function Demo2Dashboard({
-  dtf, score, buckets, activeBucket, onBucketClick, onClearBucket,
-  rows, highlightIds, transformingIds, onNavigate,
+  dtf, score, saved, dtfUplift, scoreUplift, savedUplift,
+  buckets, activeBucket, onBucketClick, onClearBucket,
+  rows, highlightIds, transformingIds,
+  selectedIds, onToggleSelect, onNavigate,
 }: Demo2DashboardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
+  const [vehicleType, setVehicleType] = useState<VehicleTypeTab>("new");
+
+  // Tabs filter by the explicit vehicleType field; aging on the lot does
+  // *not* make a vehicle pre-owned — it can still be a new unit racking up
+  // holding cost. Rows default to "new" when the field is omitted.
+  const filteredByType = useMemo(() => {
+    if (vehicleType === "all") return rows;
+    return rows.filter((r) => (r.vehicleType ?? "new") === vehicleType);
+  }, [rows, vehicleType]);
+
+  const newCount = rows.filter((r) => (r.vehicleType ?? "new") === "new").length;
+  const preownedCount = rows.filter((r) => r.vehicleType === "preowned").length;
 
   useEffect(() => {
     const root = containerRef.current;
@@ -119,6 +167,35 @@ export function Demo2Dashboard({
   //   1. Cascade — each row turns purple top-to-bottom (stagger 0.10s, max 1s)
   //   2. Quad-pulse — every row breathes together (4 yoyo cycles)
   //   3. Settle — clears to a faint tint, then clearProps so CSS takes over
+  // ── Filter-change animation ─────────────────────────────────────────────
+  // When the active bucket changes, the visible rows fade-in with a stagger
+  // and the active filter card pops with a small bounce. This makes the
+  // filter feel like it's actively being applied rather than just toggling.
+  useEffect(() => {
+    const tbody = tbodyRef.current;
+    if (tbody) {
+      const rows = Array.from(tbody.querySelectorAll<HTMLTableRowElement>("tr"));
+      if (rows.length) {
+        gsap.fromTo(
+          rows,
+          { y: 10, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.35, stagger: 0.035, ease: "power3.out" }
+        );
+      }
+    }
+    if (activeBucket) {
+      const active = document.querySelector<HTMLElement>(
+        `[data-filter-card][data-active="true"]`
+      );
+      if (active) {
+        gsap.fromTo(active,
+          { scale: 1 },
+          { scale: 1.04, duration: 0.18, ease: "power2.out", yoyo: true, repeat: 1 }
+        );
+      }
+    }
+  }, [activeBucket]);
+
   useEffect(() => {
     if (transformingIds.size === 0) return;
     const tbody = tbodyRef.current;
@@ -177,7 +254,7 @@ export function Demo2Dashboard({
             <div data-fade className="flex items-start justify-between mb-[16px]">
               <div>
                 <h1 className="text-[24px] font-bold text-[#0a0a0a] font-['Inter:Bold',sans-serif] leading-tight">
-                  New Vehicle Inventory
+                  Active Inventory
                 </h1>
                 <p className="text-[13px] text-[#6B7280] mt-[2px] font-['Inter:Regular',sans-serif]">
                   Diagnosed from your IMS scan
@@ -200,11 +277,26 @@ export function Demo2Dashboard({
             </div>
 
             {/* Tabs row */}
-            <div data-fade className="flex items-end justify-between border-b border-black/8 mb-[18px]">
+            <div data-fade className="flex items-end justify-between border-b border-black/8 mb-[28px]">
               <div className="flex items-center gap-[24px] -mb-[1px]">
-                <Tab label="All vehicles" />
-                <Tab label="New Vehicles" count={234} active />
-                <Tab label="Pre-owned Vehicles" count={108} />
+                <Tab
+                  label="All vehicles"
+                  count={rows.length}
+                  active={vehicleType === "all"}
+                  onClick={() => setVehicleType("all")}
+                />
+                <Tab
+                  label="New Vehicles"
+                  count={newCount}
+                  active={vehicleType === "new"}
+                  onClick={() => setVehicleType("new")}
+                />
+                <Tab
+                  label="Pre-owned Vehicles"
+                  count={preownedCount}
+                  active={vehicleType === "preowned"}
+                  onClick={() => setVehicleType("preowned")}
+                />
               </div>
               <div className="flex items-center gap-[6px] pb-[10px]">
                 <span className="size-[6px] rounded-full bg-[#F59E0B] animate-pulse" />
@@ -217,11 +309,14 @@ export function Demo2Dashboard({
               </div>
             </div>
 
-            {/* Persistent KPI bar — Days to Frontline + half-donut Inventory Score.
-                Cards are tight: label row, then a single data row right under it. */}
-            <div data-fade className="flex gap-[14px] mb-[16px]">
-              {/* ── Days to Frontline ───────────────────────────────────── */}
-              <div className="flex-1 rounded-[14px] border border-black/8 bg-white px-[18px] py-[12px] shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col">
+            {/* KPI bar — DTF, Inventory Score, Money Saved. Each card carries:
+                ▸ a label + info icon on the top row
+                ▸ the main figure + persistent uplift indicator on the bottom-left
+                ▸ a status pill (Critical / Needs attention / Healthy) on the bottom-right */}
+            <div data-fade className="flex gap-[14px] mb-[28px]">
+              {/* ── 1. Days to Frontline ─────────────────────────────────── */}
+              <div className="relative flex-1 rounded-[14px] border border-black/8 bg-white px-[18px] py-[12px] shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col">
+                <KpiDelta value={dtf} direction="down-good" suffix=" d" />
                 <div className="flex items-center gap-[6px]">
                   <span className="size-[8px] rounded-full bg-[#4600F2]" />
                   <p className="text-[12px] font-semibold text-black/55 font-['Inter:Semi_Bold',sans-serif] uppercase tracking-[0.3px]">
@@ -236,7 +331,7 @@ export function Demo2Dashboard({
                     <Info size={13} strokeWidth={2.2} />
                   </button>
                 </div>
-                <div className="flex items-center justify-between gap-[10px] mt-auto pt-[10px]">
+                <div className="flex items-end justify-between gap-[10px] mt-auto pt-[10px]">
                   <div className="flex items-baseline gap-[6px]">
                     <span
                       className="text-[40px] font-bold font-['Inter:Bold',sans-serif] leading-none"
@@ -245,25 +340,28 @@ export function Demo2Dashboard({
                       <KpiCounter value={dtf} />
                     </span>
                     <span className="text-[14px] text-black/55 font-medium">days</span>
-                    {(() => {
-                      const s = dtfStatus(dtf);
-                      return (
-                        <span
-                          className="ml-[8px] inline-flex items-center gap-[5px] px-[8px] py-[2px] rounded-full text-[10px] font-bold uppercase tracking-[0.5px] font-['Inter:Bold',sans-serif]"
-                          style={{ color: s.color, background: s.bg }}
-                        >
-                          <span className="size-[6px] rounded-full" style={{ background: s.color }} />
-                          {s.label}
-                        </span>
-                      );
-                    })()}
+                    {dtfUplift > 0 && (
+                      <UpliftBadge text={`−${dtfUplift}d`} />
+                    )}
                   </div>
-                  <MiniBars heights={dtfBars} color={dtfColor} />
+                  {(() => {
+                    const s = dtfStatus(dtf);
+                    return (
+                      <span
+                        className="inline-flex items-center gap-[5px] px-[8px] py-[3px] rounded-full text-[10px] font-bold uppercase tracking-[0.5px] font-['Inter:Bold',sans-serif]"
+                        style={{ color: s.color, background: s.bg }}
+                      >
+                        <span className="size-[6px] rounded-full" style={{ background: s.color }} />
+                        {s.label}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
 
-              {/* ── Inventory Score (half-donut gauge on the LEFT) ─────── */}
-              <div className="flex-1 rounded-[14px] border border-black/8 bg-white px-[18px] py-[12px] shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col">
+              {/* ── 2. Inventory Score (half-donut gauge on the LEFT) ──── */}
+              <div className="relative flex-1 rounded-[14px] border border-black/8 bg-white px-[18px] py-[12px] shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col">
+                <KpiDelta value={score} direction="up-good" decimals={1} />
                 <div className="flex items-center gap-[6px]">
                   <span className="size-[8px] rounded-full bg-[#10B981]" />
                   <p className="text-[12px] font-semibold text-black/55 font-['Inter:Semi_Bold',sans-serif] uppercase tracking-[0.3px]">
@@ -278,22 +376,27 @@ export function Demo2Dashboard({
                     <Info size={13} strokeWidth={2.2} />
                   </button>
                 </div>
-                <div className="flex items-center gap-[12px] mt-auto pt-[4px]">
-                  <div className="-my-[6px] shrink-0">
-                    <ScoreGauge
-                      score={score}
-                      max={10}
-                      width={110}
-                      scoreColor={scoreColor}
-                      animateKey={score}
-                      compact
-                    />
+                <div className="flex items-end justify-between gap-[12px] mt-auto pt-[4px]">
+                  <div className="flex items-center gap-[8px]">
+                    <div className="-my-[6px] shrink-0">
+                      <ScoreGauge
+                        score={score}
+                        max={10}
+                        width={110}
+                        scoreColor={scoreColor}
+                        animateKey={score}
+                        compact
+                      />
+                    </div>
+                    {scoreUplift > 0 && (
+                      <UpliftBadge text={`+${scoreUplift.toFixed(1)}`} />
+                    )}
                   </div>
                   {(() => {
                     const s = scoreStatus(score);
                     return (
                       <span
-                        className="inline-flex items-center gap-[5px] px-[8px] py-[2px] rounded-full text-[10px] font-bold uppercase tracking-[0.5px] font-['Inter:Bold',sans-serif]"
+                        className="inline-flex items-center gap-[5px] px-[8px] py-[3px] rounded-full text-[10px] font-bold uppercase tracking-[0.5px] font-['Inter:Bold',sans-serif]"
                         style={{ color: s.color, background: s.bg }}
                       >
                         <span className="size-[6px] rounded-full" style={{ background: s.color }} />
@@ -303,39 +406,112 @@ export function Demo2Dashboard({
                   })()}
                 </div>
               </div>
+
+              {/* ── 3. Money Saved (cumulative holding-cost recovery) ──── */}
+              <div className="relative flex-1 rounded-[14px] border border-black/8 bg-white px-[18px] py-[12px] shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col">
+                <KpiDelta value={saved} direction="up-good" decimals={0} suffix="" />
+                <div className="flex items-center gap-[6px]">
+                  <span className="size-[8px] rounded-full bg-[#059669]" />
+                  <p className="text-[12px] font-semibold text-black/55 font-['Inter:Semi_Bold',sans-serif] uppercase tracking-[0.3px]">
+                    Money Saved
+                  </p>
+                  <button
+                    type="button"
+                    title="Cumulative holding-cost dollars recovered across all resolved buckets so far this session."
+                    className="ml-auto size-[18px] rounded-full hover:bg-black/5 flex items-center justify-center text-black/40"
+                    aria-label="About Money Saved"
+                  >
+                    <Info size={13} strokeWidth={2.2} />
+                  </button>
+                </div>
+                <div className="flex items-end justify-between gap-[10px] mt-auto pt-[10px]">
+                  <div className="flex items-baseline gap-[6px]">
+                    <span className="text-[20px] font-bold text-[#059669] font-['Inter:Bold',sans-serif] leading-none">$</span>
+                    <span
+                      className="text-[40px] font-bold font-['Inter:Bold',sans-serif] leading-none"
+                      style={{ color: "#059669" }}
+                    >
+                      <KpiCounter value={saved} format={(n) => Math.round(n).toLocaleString()} />
+                    </span>
+                    {savedUplift > 0 && (
+                      <UpliftBadge text={`+$${Math.round(savedUplift).toLocaleString()}`} />
+                    )}
+                  </div>
+                  <span className="inline-flex items-center gap-[5px] px-[8px] py-[3px] rounded-full text-[10px] font-bold uppercase tracking-[0.5px] font-['Inter:Bold',sans-serif] text-[#047857] bg-[rgba(16,185,129,0.14)]">
+                    <span className="size-[6px] rounded-full bg-[#047857]" />
+                    Recovering
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Filter chips — diagnostic buckets now live in the floating FAB above */}
-            <div data-fade className="flex items-center justify-between mb-[12px]">
+            {/* Compact filter row — 5 mini bucket pills on the left,
+                utility buttons (View Input / Export / Filters / Sold) right-aligned. */}
+            <div data-fade className="flex items-center justify-between gap-[12px] mb-[14px]">
               <div className="flex items-center gap-[8px] flex-wrap">
-                <FilterChip
-                  label="All"
-                  count={rows.length}
-                  active={activeBucket === null}
-                  onClick={onClearBucket}
-                />
-                {(["raw","nophoto","unsyndicated","aging"] as BucketKey[]).map((k) => (
-                  <FilterChip
-                    key={k}
-                    label={shortBucketLabel(k)}
-                    count={buckets[k].count}
-                    active={activeBucket === k}
-                    onClick={() => onBucketClick(k)}
-                  />
-                ))}
+                {FILTER_CARDS.map((f) => {
+                  const state = buckets[f.key];
+                  const isActive = activeBucket === f.key;
+                  const isDone = state.completed;
+                  return (
+                    <button
+                      key={f.key}
+                      type="button"
+                      data-filter-card
+                      data-active={isActive ? "true" : undefined}
+                      onClick={() => isActive ? onClearBucket() : onBucketClick(f.key)}
+                      className={`relative inline-flex items-center gap-[7px] h-[34px] pl-[8px] pr-[12px] rounded-full border transition-all ${
+                        isActive
+                          ? "bg-[#311083] border-[#311083]"
+                          : "bg-white border-black/8 hover:border-black/15 hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)]"
+                      }`}
+                    >
+                      <span
+                        className="size-[20px] rounded-full flex items-center justify-center shrink-0"
+                        style={{
+                          background: isActive
+                            ? "rgba(255,255,255,0.22)"
+                            : isDone ? "rgba(16,185,129,0.16)" : `${f.color}18`,
+                          color: isActive ? "#ffffff" : (isDone ? "#059669" : f.color),
+                        }}
+                      >
+                        <span className="scale-[0.7] flex">{f.icon}</span>
+                      </span>
+                      <span
+                        className={`text-[11.5px] font-semibold font-['Inter:Semi_Bold',sans-serif] whitespace-nowrap ${
+                          isActive ? "text-white" : "text-[#0a0a0a]"
+                        }`}
+                      >
+                        {f.label}
+                      </span>
+                      <span
+                        className="text-[11px] font-bold font-['Inter:Bold',sans-serif] px-[6px] py-[1px] rounded-full whitespace-nowrap"
+                        style={{
+                          background: isActive
+                            ? "rgba(255,255,255,0.20)"
+                            : "rgba(0,0,0,0.05)",
+                          color: isActive ? "#ffffff" : (isDone ? "#059669" : "#0a0a0a"),
+                        }}
+                      >
+                        {state.count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-              <div className="flex items-center gap-[8px]">
-                <button className="inline-flex items-center gap-[6px] h-[32px] px-[12px] rounded-[8px] bg-white border border-black/10 text-[12px] font-medium text-black/70 hover:bg-[#fafafa]">
-                  <Eye size={13} /> View Input
+
+              <div className="flex items-center gap-[6px] shrink-0">
+                <button className="inline-flex items-center gap-[5px] h-[30px] px-[10px] rounded-[8px] bg-white border border-black/10 text-[11.5px] font-medium text-black/70 hover:bg-[#fafafa]">
+                  <Eye size={12} /> View Input
                 </button>
-                <button className="inline-flex items-center gap-[6px] h-[32px] px-[12px] rounded-[8px] bg-white border border-black/10 text-[12px] font-medium text-black/70 hover:bg-[#fafafa]">
-                  <Download size={13} /> Export
+                <button className="inline-flex items-center gap-[5px] h-[30px] px-[10px] rounded-[8px] bg-white border border-black/10 text-[11.5px] font-medium text-black/70 hover:bg-[#fafafa]">
+                  <Download size={12} /> Export
                 </button>
-                <button className="inline-flex items-center gap-[6px] h-[32px] px-[12px] rounded-[8px] bg-white border border-black/10 text-[12px] font-medium text-black/70 hover:bg-[#fafafa]">
-                  <Filter size={13} /> Filters
+                <button className="inline-flex items-center gap-[5px] h-[30px] px-[10px] rounded-[8px] bg-white border border-black/10 text-[11.5px] font-medium text-black/70 hover:bg-[#fafafa]">
+                  <Filter size={12} /> Filters
                 </button>
-                <button className="inline-flex items-center gap-[6px] h-[32px] px-[12px] rounded-[8px] bg-white border border-black/10 text-[12px] font-medium text-black/70 hover:bg-[#fafafa]">
-                  <CircleDot size={13} /> Sold
+                <button className="inline-flex items-center gap-[5px] h-[30px] px-[10px] rounded-[8px] bg-white border border-black/10 text-[11.5px] font-medium text-black/70 hover:bg-[#fafafa]">
+                  <CircleDot size={12} /> Sold
                 </button>
               </div>
             </div>
@@ -344,8 +520,8 @@ export function Demo2Dashboard({
             <div data-fade className="bg-white rounded-[14px] border border-black/8 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-black/8 bg-[#F4F0FF]">
-                    <th className="pl-4 pr-2 py-3 w-10">
+                  <tr className="border-b border-black/8 bg-[#F3F4F6]">
+                    <th className="pl-4 pr-2 py-3 w-10 border-r border-black/5">
                       <input type="checkbox" className="w-4 h-4 rounded border-gray-300 accent-[#4600f2]" />
                     </th>
                     <ColHeader label="Vehicle" />
@@ -353,25 +529,26 @@ export function Demo2Dashboard({
                     <ColHeader label="Media" />
                     <ColHeader label="Media Score" />
                     <ColHeader label="Publishing" />
+                    <ColHeader label="Last Published" />
                     <ColHeader label="Days to Frontline" />
-                    <ColHeader label="Hold. Cost" />
+                    <ColHeader label="Hold. Cost" last />
                   </tr>
                 </thead>
                 <tbody ref={tbodyRef}>
-                  {rows.length === 0 ? (
+                  {filteredByType.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-[40px] text-center text-[13px] text-black/45">
+                      <td colSpan={9} className="py-[40px] text-center text-[13px] text-black/45">
                         No vehicles in this view.
                       </td>
                     </tr>
                   ) : (
-                    rows.map((r) => (
+                    filteredByType.map((r) => (
                       <VehicleRow
                         key={r.id}
                         row={r}
                         published={[]}
-                        selected={false}
-                        onToggle={() => {}}
+                        selected={selectedIds.has(r.id)}
+                        onToggle={() => onToggleSelect(r.id)}
                         spotlit={highlightIds.has(r.id) || transformingIds.has(r.id)}
                         transforming={transformingIds.has(r.id)}
                       />
