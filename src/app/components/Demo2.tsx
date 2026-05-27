@@ -467,6 +467,12 @@ export function Demo2() {
     setPitchOpen(false);
   }, []);
 
+  // Filter chips on the dashboard only filter the list — they don't open the
+  // pitch panel. The Need Actions FAB is the only entry into the pitch.
+  const handleFilterChange = useCallback((b: BucketKey | null) => {
+    setActiveBucket(b);
+  }, []);
+
   // ─── Run the actual transformation animation on the affected rows ──
   // Used by both the FAB's Transform button and (for aging) the Create-Campaign FAB.
   const runTransform = useCallback((bucket: BucketKey, options?: { platforms?: string[] }) => {
@@ -574,6 +580,7 @@ export function Demo2() {
         buckets={buckets}
         activeBucket={activeBucket}
         onBucketClick={handleBucketClick}
+        onFilterChange={handleFilterChange}
         onClearBucket={handleClearBucket}
         rows={visibleRows}
         highlightIds={highlightIds}
@@ -650,10 +657,13 @@ export function Demo2() {
           label = "Continue to campaign builder";
           onAction = handleAgingPitchContinue;
         } else if (isSyndication) {
-          // Clicking Syndicate opens Demo 1's PublishModal — the proper
-          // "where do you want to publish?" picker, not inline in the pitch.
+          // Clicking Syndicate closes the pitch panel and opens Demo 1's
+          // PublishModal — the proper "where do you want to publish?" picker.
           label = pitchContent.actionLabel;
-          onAction = () => setPublishModalOpen(true);
+          onAction = () => {
+            setPitchOpen(false);
+            setPublishModalOpen(true);
+          };
         } else {
           label = pitchContent.actionLabel;
           onAction = () => runTransform(activeBucket!);

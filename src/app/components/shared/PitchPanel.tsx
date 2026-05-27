@@ -176,7 +176,7 @@ export function PitchPanel(props: PitchPanelProps) {
     // No overlay — dashboard + vehicle rows remain fully visible behind the panel.
     <div
       ref={panelRef}
-      className="fixed top-0 right-0 bottom-0 z-[70] w-[480px] bg-white border-l border-black/10 shadow-[-30px_0_60px_rgba(0,0,0,0.18)] flex flex-col"
+      className="fixed top-0 right-0 bottom-0 z-[70] w-[480px] bg-white border-l border-black/10 shadow-[-12px_0_28px_rgba(0,0,0,0.08)] flex flex-col"
     >
         {/* Header */}
         <div className="px-[28px] pt-[24px] pb-[18px] border-b border-black/8">

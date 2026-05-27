@@ -30,7 +30,10 @@ export interface Demo2DashboardProps {
   savedUplift: number; // positive when more money was saved this step
   buckets: Record<BucketKey, BucketState>;
   activeBucket: BucketKey | null;
+  /** Used by the FAB — opens the pitch panel too. */
   onBucketClick: (b: BucketKey) => void;
+  /** Used by the on-dashboard filter chips — filter only, no pitch open. */
+  onFilterChange: (b: BucketKey | null) => void;
   onClearBucket: () => void;
   rows: Row[];
   /** IDs of rows to spotlight (per-scene focus). */
@@ -130,7 +133,7 @@ function barsFor(value: number, max: number, higherBetter = false): number[] {
 
 export function Demo2Dashboard({
   dtf, score, saved, dtfUplift, scoreUplift, savedUplift,
-  buckets, activeBucket, onBucketClick, onClearBucket,
+  buckets, activeBucket, onBucketClick, onFilterChange, onClearBucket,
   rows, highlightIds, transformingIds,
   selectedIds, onToggleSelect, onNavigate,
 }: Demo2DashboardProps) {
@@ -459,7 +462,7 @@ export function Demo2Dashboard({
                       type="button"
                       data-filter-card
                       data-active={isActive ? "true" : undefined}
-                      onClick={() => isActive ? onClearBucket() : onBucketClick(f.key)}
+                      onClick={() => onFilterChange(isActive ? null : f.key)}
                       className={`relative inline-flex items-center gap-[7px] h-[34px] pl-[8px] pr-[12px] rounded-full border transition-all ${
                         isActive
                           ? "bg-[#311083] border-[#311083]"

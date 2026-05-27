@@ -191,9 +191,13 @@ export function VehicleRow({
           )}
         </div>
       </td>
-      {/* Media Score */}
+      {/* Media Score — color-coded the same way as the Inventory Score gauge:
+          red < 5, amber 5-8, green ≥ 8. */}
       <td className="py-3 px-4 border-r border-black/5">
-        <span className="text-[14px] font-bold text-[#10B981] font-['Inter:Bold',sans-serif]">
+        <span
+          className="text-[14px] font-bold font-['Inter:Bold',sans-serif]"
+          style={{ color: mediaScoreColor(row.mediaScore) }}
+        >
           {row.mediaScore.toFixed(1)}
         </span>
       </td>
@@ -263,6 +267,14 @@ export function VehicleRow({
       </td>
     </tr>
   );
+}
+
+// Banded color for the per-row media score. Mirrors the ScoreGauge gradient
+// (red < 5, amber 5-8, green ≥ 8) so a row's number always matches the gauge.
+function mediaScoreColor(score: number): string {
+  if (score < 5) return "#EF4444";
+  if (score < 8) return "#F59E0B";
+  return "#10B981";
 }
 
 // ─── Date formatters for the Last Published column ──────────────────────────
